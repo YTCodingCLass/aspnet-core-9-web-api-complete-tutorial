@@ -1,0 +1,6 @@
+@FirstControllerAndSwagger_HostAddress = http://localhost:5078
+
+GET {{FirstControllerAndSwagger_HostAddress}}/api/Products/GetProduct2
+Accept: application/json
+
+###
