@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AutoMapperApi.Models;
+namespace AutoMapperApi.Models.DTOs;
 
 /// <summary>
 /// DTO for updating a product (PUT - complete replacement)
@@ -30,4 +30,12 @@ public class UpdateProductDto
     [Required(ErrorMessage = "Category is required")]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "Category must be between 2 and 50 characters")]
     public string Category { get; set; } = string.Empty;
+    
+    
+    /// <summary>
+    /// Stock quantity
+    /// </summary>
+    /// <example>75</example>
+    [Range(0, int.MaxValue, ErrorMessage = "Stock quantity cannot be negative")]
+    public int StockQuantity { get; set; }
 }

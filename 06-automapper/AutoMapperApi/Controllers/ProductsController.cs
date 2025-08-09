@@ -1,4 +1,5 @@
 using AutoMapperApi.Models;
+using AutoMapperApi.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AutoMapperApi.Controllers;
@@ -7,12 +8,59 @@ namespace AutoMapperApi.Controllers;
 [Route("api/[controller]")]
 public class ProductsController(ILogger<ProductsController> logger) : ControllerBase
 {
-    private static List<Product> products = new()
+    // In-memory data store (in real app, this would be a database)
+    private static readonly List<Product> products = new()
     {
-        new() { Id = 1, Name = "Laptop", Price = 999.99m, Category = "Electronics", CreatedAt = DateTime.UtcNow.AddDays(-10) },
-        new() { Id = 2, Name = "Mouse", Price = 29.99m, Category = "Electronics", CreatedAt = DateTime.UtcNow.AddDays(-5) },
-        new() { Id = 3, Name = "Keyboard", Price = 79.99m, Category = "Electronics", CreatedAt = DateTime.UtcNow.AddDays(-2) },
-        new() { Id = 4, Name = "Monitor", Price = 299.99m, Category = "Electronics", CreatedAt = DateTime.UtcNow.AddDays(-1) }
+        new Product 
+        { 
+            Id = 1, 
+            Name = "Gaming Laptop", 
+            Price = 1499.99m, 
+            Category = "Electronics",
+            StockQuantity = 25,
+            CreatedAt = DateTime.UtcNow.AddDays(-10),
+            Supplier = new Supplier 
+            { 
+                Id = 1, 
+                CompanyName = "Tech Supplies Inc.", 
+                ContactName = "John Doe",
+                Phone = "555-0100"
+            }
+        },
+        new Product 
+        { 
+            Id = 2, 
+            Name = "Wireless Mouse", 
+            Price = 49.99m, 
+            Category = "Accessories",
+            StockQuantity = 8, // Low stock!Now.AddDays(-5),
+            Supplier = new Supplier 
+            { 
+                Id = 2, 
+                CompanyName = "Peripheral World", 
+                ContactName = "Jane Smith",
+                Phone = "555-0200"
+            }
+        },
+        new Product 
+        { 
+            Id = 3, 
+            Name = "Mechanical Keyboard", 
+            Price = 129.99m, 
+            Category = "Accessories",
+            StockQuantity = 0, // Out of stock!
+            CreatedAt = DateTime.UtcNow.AddDays(-2)
+            // No supplier for this one
+        },
+        new Product 
+        { 
+            Id = 4, 
+            Name = "4K Monitor", 
+            Price = 599.99m, 
+            Category = "Displays",
+            StockQuantity = 15,
+            CreatedAt = DateTime.UtcNow.AddDays(-1)
+        }
     };
     
     /// <summary>
@@ -45,7 +93,21 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
         if (product == null)
             return NotFound();
 
-        return Ok(product.MapToResponseDto());
+        var responseDto = new ProductResponseDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Category = product.Category,
+            StockQuantity = product.StockQuantity,
+            StockStatus = product.StockQuantity == 0 ? "Out of Stock" : 
+                product.StockQuantity <= 10 ? "Low Stock" : "In Stock",
+            CreatedAt = product.CreatedAt,
+            SupplierCompanyName = product.Supplier?.CompanyName,
+            SupplierContactName = product.Supplier?.ContactName
+        };
+        
+        return Ok(responseDto);
     }
     
     /// <summary>

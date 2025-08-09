@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AutoMapperApi.Models;
+namespace AutoMapperApi.Models.DTOs;
 
 /// <summary>
 /// DTO for creating a new product
@@ -30,4 +30,11 @@ public class CreateProductDto
     [Required(ErrorMessage = "Category is required")]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "Category must be between 2 and 50 characters")]
     public string Category { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Initial stock quantity
+    /// </summary>
+    /// <example>50</example>
+    [Range(0, int.MaxValue, ErrorMessage = "Stock quantity cannot be negative")]
+    public int StockQuantity { get; set; }
 }

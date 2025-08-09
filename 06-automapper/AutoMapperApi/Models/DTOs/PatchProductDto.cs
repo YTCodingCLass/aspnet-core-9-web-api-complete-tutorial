@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AutoMapperApi.Models;
+namespace AutoMapperApi.Models.DTOs;
 
 /// <summary>
 /// DTO for partially updating a product (PATCH - partial update)
@@ -27,4 +27,12 @@ public class PatchProductDto
     /// <example>Accessories</example>
     [StringLength(50, MinimumLength = 2, ErrorMessage = "Category must be between 2 and 50 characters")]
     public string? Category { get; set; }
+    
+    
+    /// <summary>
+    /// Stock quantity (optional for patch)
+    /// </summary>
+    /// <example>100</example>
+    [Range(0, int.MaxValue, ErrorMessage = "Stock quantity cannot be negative")]
+    public int? StockQuantity { get; set; }
 }
