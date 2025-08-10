@@ -1,3 +1,4 @@
+using AutoMapper;
 using AutoMapperApi.Models;
 using AutoMapperApi.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,7 @@ namespace AutoMapperApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductsController(ILogger<ProductsController> logger) : ControllerBase
+public class ProductsController(ILogger<ProductsController> logger, IMapper mapper) : ControllerBase
 {
     // In-memory data store (in real app, this would be a database)
     private static readonly List<Product> products = new()
@@ -33,7 +34,8 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
             Name = "Wireless Mouse", 
             Price = 49.99m, 
             Category = "Accessories",
-            StockQuantity = 8, // Low stock!Now.AddDays(-5),
+            StockQuantity = 8, // Low stock!
+            CreatedAt = DateTime.UtcNow.AddDays(-5),
             Supplier = new Supplier 
             { 
                 Id = 2, 
@@ -49,7 +51,7 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
             Price = 129.99m, 
             Category = "Accessories",
             StockQuantity = 0, // Out of stock!
-            CreatedAt = DateTime.UtcNow.AddDays(-2)
+            CreatedAt = DateTime.UtcNow.AddDays(-2),
             // No supplier for this one
         },
         new Product 
@@ -72,10 +74,12 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
     public ActionResult<IEnumerable<ProductResponseDto>> GetProducts()
     {
         logger.LogInformation("Getting all Products");
+        
+        var products = ProductsController.products;
 
-        var products = ProductsController.products.Select(x => x.MapToResponseDto());
-
-        return Ok(products);
+        var productDtoList = mapper.Map<IEnumerable<ProductResponseDto>>(products);
+        
+        return Ok(productDtoList);
     }
     
     /// <summary>
@@ -93,19 +97,7 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
         if (product == null)
             return NotFound();
 
-        var responseDto = new ProductResponseDto
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price,
-            Category = product.Category,
-            StockQuantity = product.StockQuantity,
-            StockStatus = product.StockQuantity == 0 ? "Out of Stock" : 
-                product.StockQuantity <= 10 ? "Low Stock" : "In Stock",
-            CreatedAt = product.CreatedAt,
-            SupplierCompanyName = product.Supplier?.CompanyName,
-            SupplierContactName = product.Supplier?.ContactName
-        };
+        var responseDto = mapper.Map<ProductResponseDto>(product);
         
         return Ok(responseDto);
     }
@@ -127,14 +119,8 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
             return BadRequest(ModelState);
         }
 
-        var newProduct = new Product()
-        {
-            Id = products.Max(x => x.Id) + 1,
-            Name = createProductDto.Name,
-            Price = createProductDto.Price,
-            Category = createProductDto.Category,
-            CreatedAt = DateTime.UtcNow
-        };
+        var newProduct = mapper.Map<Product>(createProductDto);
+        newProduct.Id = products.Max(x => x.Id) + 1;
         
         products.Add(newProduct);
 
@@ -169,11 +155,11 @@ public class ProductsController(ILogger<ProductsController> logger) : Controller
             return NotFound($"Product with ID {id} not fount for Update");
         }
 
-        existingProduct.Name = updateProductDto.Name;
-        existingProduct.Price = updateProductDto.Price;
-        existingProduct.Category = updateProductDto.Category;
+        mapper.Map(updateProductDto, existingProduct);
 
-        return Ok(existingProduct.MapToResponseDto());
+        var responseDto = mapper.Map<ProductResponseDto>(existingProduct);
+
+        return Ok(responseDto);
     }
 
     /// <summary>

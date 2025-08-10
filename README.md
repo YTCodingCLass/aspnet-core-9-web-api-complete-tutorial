@@ -108,10 +108,11 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - Separating internal models from API contracts
 
 ### **Chapter 06: AutoMapper Integration**
-- Installing and configuring AutoMapper
-- Mapping between entities and DTOs
-- Reducing boilerplate mapping code
-- Clean architecture patterns
+- Installing and configuring AutoMapper in ASP.NET Core
+- Creating mapping profiles for DTOs and entities
+- Eliminating manual mapping boilerplate code
+- Advanced mapping scenarios with stock status calculation
+- Best practices for object mapping in Web APIs
 
 ## 🔧 Project Structure
 
@@ -126,7 +127,7 @@ aspnet-core-9-web-api-tutorial/
 ├── 05-dto-and-validations/
 │   └── DtoAndValidation/
 ├── 06-automapper/
-│   └── AutoMapper/
+│   └── AutoMapperApi/
 └── README.md
 ```
 
@@ -185,6 +186,32 @@ Found an issue or want to improve something? Feel free to:
 ## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ➡️ What's Next?
+
+🎉 **Congratulations!** You've completed the core ASP.NET Core 9 Web API tutorial series!
+
+**Next learning paths:**
+- **Entity Framework Core** for database integration
+- **Authentication & Authorization** for secure APIs
+- **Caching strategies** for performance optimization
+- **API versioning** for evolving APIs
+- **Unit testing** for reliable code
+
+## 💡 AutoMapper Pro Tips
+
+**AutoMapper eliminates repetitive mapping code and provides:**
+- **Automatic mapping** between DTOs and entities with minimal configuration
+- **Stock status calculation** with custom mapping logic for business rules
+- **Cleaner controllers** with reduced boilerplate - from 20+ lines to 1-2 lines per mapping
+- **Centralized mapping configuration** in profiles for better maintainability
+- **Performance benefits** through compiled mappings and cached expressions
+
+**Key benefits demonstrated in Chapter 06:**
+- ✅ **90% reduction** in mapping code lines
+- ✅ **Centralized configuration** in MappingProfile.cs
+- ✅ **Advanced scenarios** like stock status calculation
+- ✅ **Better separation of concerns** between controllers and mapping logic
 
 ## 🙏 Acknowledgments
 
