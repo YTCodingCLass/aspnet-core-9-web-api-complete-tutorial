@@ -23,6 +23,7 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 | **04** | [HTTP Methods API](./04-http-methods-api/) | GET, POST, PUT, PATCH, DELETE | ⏱️ ~35 min |
 | **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~30 min |
 | **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~20 min |
+| **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~30 min |
 
 ## 🎯 What You'll Learn
 
@@ -44,11 +45,17 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - ✅ Error handling and custom validation messages
 - ✅ AutoMapper for efficient object mapping
 
+### **Dependency Injection & Architecture**
+- ✅ Dependency injection and service lifetimes
+- ✅ Understanding Singleton, Scoped, and Transient services
+- ✅ Service registration and container configuration
+- ✅ Best practices for service design and implementation
+
 ### **Best Practices**
-- ✅ Dependency injection and logging
 - ✅ Separation of concerns with proper project structure
 - ✅ HTTP method semantics (idempotency, safety)
 - ✅ Response patterns and status codes
+- ✅ Logging and performance considerations
 
 ## 🚀 Quick Start
 
@@ -114,6 +121,14 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - Advanced mapping scenarios with stock status calculation
 - Best practices for object mapping in Web APIs
 
+### **Chapter 07: Dependency Injection**
+- Understanding Dependency Injection principles in ASP.NET Core
+- Creating and registering services in the DI container
+- Service lifetimes: **Transient**, **Scoped**, and **Singleton**
+- Practical differences between service lifetimes with real examples
+- When to use each service lifetime in production applications
+- Visual demonstration of instance creation and disposal
+
 ## 🔧 Project Structure
 
 ```
@@ -128,6 +143,8 @@ aspnet-core-9-web-api-tutorial/
 │   └── DtoAndValidation/
 ├── 06-automapper/
 │   └── AutoMapperApi/
+├── 07-dependency-injection/
+│   └── DependencyInjectionApi/
 └── README.md
 ```
 
@@ -163,7 +180,8 @@ aspnet-core-9-web-api-tutorial/
 2. Follow **Chapters 02-03** to understand controllers
 3. Master **Chapter 04** for HTTP methods
 4. Learn **Chapter 05** for professional DTOs
-5. Complete with **Chapter 06** for AutoMapper
+5. Practice **Chapter 06** for AutoMapper
+6. Complete with **Chapter 07** for Dependency Injection
 
 **For experienced developers:**
 - Jump to any chapter based on your needs
@@ -194,9 +212,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Next learning paths:**
 - **Entity Framework Core** for database integration
 - **Authentication & Authorization** for secure APIs
-- **Caching strategies** for performance optimization
+- **Repository Pattern** with Dependency Injection
+- **Unit Testing** with mocked dependencies
+- **Background Services** and hosted services
 - **API versioning** for evolving APIs
-- **Unit testing** for reliable code
+
+## 💡 Dependency Injection Pro Tips
+
+**Understanding Service Lifetimes is crucial for:**
+- **Performance optimization** - Choose the right lifetime for your use case
+- **Memory management** - Avoid memory leaks and captive dependencies
+- **State management** - Understand when instances are created and disposed
+- **Testing strategy** - Design services that are easy to mock and test
+
+**Key concepts demonstrated in Chapter 07:**
+- ✅ **Singleton**: One instance for entire application lifetime
+- ✅ **Scoped**: One instance per HTTP request (perfect for DbContext)
+- ✅ **Transient**: New instance every time it's injected
+- ✅ **Visual demonstration** with console logging and GUID tracking
+- ✅ **Performance implications** of each service lifetime
+- ✅ **Common pitfalls** and how to avoid them
 
 ## 💡 AutoMapper Pro Tips
 
