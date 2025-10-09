@@ -8,26 +8,14 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<Product, ProductResponseDto>()
-            .ForMember(dest => dest.StockStatus,
-                opt => opt.MapFrom(src => GetStockStatus(src.StockQuantity)));
+        // Product to DTO
+        CreateMap<Product, ProductResponseDto>();
 
-        CreateMap<CreateProductDto, Product>()
-            .ForMember(dest => dest.Id, 
-                opt => opt.Ignore());
+        // DTO to Product
+        CreateMap<CreateProductDto, Product>();
+        CreateMap<UpdateProductDto, Product>();
 
-        CreateMap<UpdateProductDto, Product>()
-            .ForMember(dest => dest.Id, 
-                opt => opt.Ignore());
-    }
-
-    private static string GetStockStatus(int stockQuantity)
-    {
-        return stockQuantity switch
-        {
-            0 => "Out of Stock",
-            <= 10 => "Low Stock",
-            _ => "In Stock"
-        };
+        // Supplier to DTO
+        CreateMap<Supplier, SupplierSummaryDto>();
     }
 }

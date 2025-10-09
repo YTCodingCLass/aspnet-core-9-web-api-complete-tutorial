@@ -1,5 +1,7 @@
 using RepositoryAndServicesApi;
 using RepositoryAndServicesApi.Mappings;
+using RepositoryAndServicesApi.Repositories;
+using RepositoryAndServicesApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new() { Title = "Dependency Injection API", Version = "v1" });
+    options.SwaggerDoc("v1", new() { Title = "Repository and Services API", Version = "v1" });
     
     // Include XML comments if file exists
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -21,6 +23,12 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
+// Register services for dependency injection
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+
+// Service lifetime examples from previous tutorial
 builder.Services.AddSingleton<ISingletonService, SingletonService>();
 builder.Services.AddScoped<IScopedService, ScopedService>();
 builder.Services.AddTransient<ITransientService, TransientService>();
