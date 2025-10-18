@@ -1,5 +1,3 @@
-// Repositories/ProductRepository.cs
-using Microsoft.Extensions.Logging;
 using ExceptionHandlingApi.Data;
 using ExceptionHandlingApi.Models;
 

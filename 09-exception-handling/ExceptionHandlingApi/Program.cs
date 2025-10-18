@@ -39,11 +39,6 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddSingleton<INotificationService, NotificationService>();
 
-// Service lifetime examples from previous tutorial
-builder.Services.AddSingleton<ISingletonService, SingletonService>();
-builder.Services.AddScoped<IScopedService, ScopedService>();
-builder.Services.AddTransient<ITransientService, TransientService>();
-
 
 var app = builder.Build();
 

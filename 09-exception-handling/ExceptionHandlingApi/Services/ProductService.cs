@@ -8,31 +8,19 @@ using ExceptionHandlingApi.Exceptions;
 
 namespace ExceptionHandlingApi.Services;
 
-public class ProductService : IProductService
+public class ProductService(
+    IProductRepository productRepository,
+    INotificationService notificationService,
+    IMapper mapper,
+    ILogger<ProductService> logger)
+    : IProductService
 {
-    private readonly IProductRepository _productRepository;
-    private readonly INotificationService _notificationService;
-    private readonly IMapper _mapper;
-    private readonly ILogger<ProductService> _logger;
-
-    public ProductService(
-        IProductRepository productRepository,
-        INotificationService notificationService,
-        IMapper mapper,
-        ILogger<ProductService> logger)
-    {
-        _productRepository = productRepository;
-        _notificationService = notificationService;
-        _mapper = mapper;
-        _logger = logger;
-    }
-
     public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync()
     {
-        _logger.LogInformation(" Service: Getting all products");
+        logger.LogInformation(" Service: Getting all products");
         
-        var products = await _productRepository.GetAllAsync();
-        var productDtos = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
+        var products = await productRepository.GetAllAsync();
+        var productDtos = mapper.Map<IEnumerable<ProductResponseDto>>(products);
         
         // Add business logic: calculate stock status
         foreach (var dto in productDtos)
@@ -40,23 +28,23 @@ public class ProductService : IProductService
             dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
         }
         
-        _logger.LogInformation(" Service: Retrieved {Count} products", productDtos.Count());
+        logger.LogInformation(" Service: Retrieved {Count} products", productDtos.Count());
         return productDtos;
     }
 
     public async Task<ProductResponseDto?> GetProductByIdAsync(int id)
     {
-        _logger.LogInformation(" Service: Getting product by ID: {ProductId}", id);
+        logger.LogInformation(" Service: Getting product by ID: {ProductId}", id);
         
-        var product = await _productRepository.GetByIdWithSupplierAsync(id);
+        var product = await productRepository.GetByIdWithSupplierAsync(id);
         
         if (product == null)
         {
-            _logger.LogWarning(" Service: Product not found: {ProductId}", id);
+            logger.LogWarning(" Service: Product not found: {ProductId}", id);
             return null;
         }
         
-        var dto = _mapper.Map<ProductResponseDto>(product);
+        var dto = mapper.Map<ProductResponseDto>(product);
         dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
         
         return dto;
@@ -64,10 +52,10 @@ public class ProductService : IProductService
 
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryAsync(string category)
     {
-        _logger.LogInformation(" Service: Getting products by category: {Category}", category);
+        logger.LogInformation(" Service: Getting products by category: {Category}", category);
         
-        var products = await _productRepository.GetByCategoryAsync(category);
-        var productDtos = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
+        var products = await productRepository.GetByCategoryAsync(category);
+        var productDtos = mapper.Map<IEnumerable<ProductResponseDto>>(products);
         
         foreach (var dto in productDtos)
         {
@@ -79,10 +67,10 @@ public class ProductService : IProductService
 
     public async Task<IEnumerable<ProductResponseDto>> GetLowStockProductsAsync()
     {
-        _logger.LogInformation(" Service: Getting low stock products");
+        logger.LogInformation(" Service: Getting low stock products");
         
-        var products = await _productRepository.GetLowStockProductsAsync(10);
-        var productDtos = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
+        var products = await productRepository.GetLowStockProductsAsync(10);
+        var productDtos = mapper.Map<IEnumerable<ProductResponseDto>>(products);
         
         foreach (var dto in productDtos)
         {
@@ -93,7 +81,7 @@ public class ProductService : IProductService
         var criticalStockProducts = productDtos.Where(p => p.StockQuantity == 0).ToList();
         if (criticalStockProducts.Any())
         {
-            await _notificationService.SendLowStockAlertAsync(criticalStockProducts);
+            await notificationService.SendLowStockAlertAsync(criticalStockProducts);
         }
         
         return productDtos;
@@ -101,33 +89,33 @@ public class ProductService : IProductService
 
     public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto createDto)
     {
-        _logger.LogInformation(" Service: Creating new product: {ProductName}", createDto.Name);
+        logger.LogInformation(" Service: Creating new product: {ProductName}", createDto.Name);
         
         // Business validation
         await ValidateProductCreationAsync(createDto);
         
-        var product = _mapper.Map<Product>(createDto);
-        var createdProduct = await _productRepository.CreateAsync(product);
+        var product = mapper.Map<Product>(createDto);
+        var createdProduct = await productRepository.CreateAsync(product);
         
-        var responseDto = _mapper.Map<ProductResponseDto>(createdProduct);
+        var responseDto = mapper.Map<ProductResponseDto>(createdProduct);
         responseDto.StockStatus = CalculateStockStatus(responseDto.StockQuantity);
         
         // Business logic: Send notification for new product
-        await _notificationService.SendProductCreatedNotificationAsync(responseDto);
+        await notificationService.SendProductCreatedNotificationAsync(responseDto);
         
-        _logger.LogInformation(" Service: Product created successfully: {ProductId}", createdProduct.Id);
+        logger.LogInformation(" Service: Product created successfully: {ProductId}", createdProduct.Id);
         return responseDto;
     }
 
     public async Task<ProductResponseDto?> UpdateProductAsync(int id, UpdateProductDto updateDto)
     {
-        _logger.LogInformation(" Service: Updating product: {ProductId}", id);
+        logger.LogInformation(" Service: Updating product: {ProductId}", id);
         
         // Check if product exists
-        var existingProduct = await _productRepository.GetByIdAsync(id);
+        var existingProduct = await productRepository.GetByIdAsync(id);
         if (existingProduct == null)
         {
-            _logger.LogWarning(" Service: Product not found for update: {ProductId}", id);
+            logger.LogWarning(" Service: Product not found for update: {ProductId}", id);
             return null;
         }
         
@@ -135,41 +123,41 @@ public class ProductService : IProductService
         await ValidateProductUpdateAsync(id, updateDto);
         
         // Map and update
-        _mapper.Map(updateDto, existingProduct);
-        var updatedProduct = await _productRepository.UpdateAsync(existingProduct);
+        mapper.Map(updateDto, existingProduct);
+        var updatedProduct = await productRepository.UpdateAsync(existingProduct);
         
-        var responseDto = _mapper.Map<ProductResponseDto>(updatedProduct);
+        var responseDto = mapper.Map<ProductResponseDto>(updatedProduct);
         responseDto.StockStatus = CalculateStockStatus(responseDto.StockQuantity);
         
         // Business logic: Check if stock changed significantly
         if (updatedProduct != null)
             await CheckStockChangesAsync(existingProduct, updatedProduct);
 
-        _logger.LogInformation(" Service: Product updated successfully: {ProductId}", id);
+        logger.LogInformation(" Service: Product updated successfully: {ProductId}", id);
         return responseDto;
     }
 
     public async Task<bool> DeleteProductAsync(int id)
     {
-        _logger.LogInformation(" Service: Deleting product: {ProductId}", id);
+        logger.LogInformation(" Service: Deleting product: {ProductId}", id);
         
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await productRepository.GetByIdAsync(id);
         if (product == null)
         {
-            _logger.LogWarning(" Service: Product not found for deletion: {ProductId}", id);
+            logger.LogWarning(" Service: Product not found for deletion: {ProductId}", id);
             return false;
         }
         
         // Business logic: Check if product can be deleted
         await ValidateProductDeletionAsync(product);
         
-        var result = await _productRepository.DeleteAsync(id);
+        var result = await productRepository.DeleteAsync(id);
         
         if (result)
         {
             // Business logic: Send deletion notification
-            await _notificationService.SendProductDeletedNotificationAsync(product.Name);
-            _logger.LogInformation(" Service: Product deleted successfully: {ProductId}", id);
+            await notificationService.SendProductDeletedNotificationAsync(product.Name);
+            logger.LogInformation(" Service: Product deleted successfully: {ProductId}", id);
         }
         
         return result;
@@ -177,7 +165,7 @@ public class ProductService : IProductService
 
     public async Task<bool> ProductExistsAsync(int id)
     {
-        return await _productRepository.ExistsAsync(id);
+        return await productRepository.ExistsAsync(id);
     }
 
     // Private business logic methods
@@ -250,7 +238,7 @@ public class ProductService : IProductService
         }
 
         // Business rule: Check if product name already exists
-        var existingProducts = await _productRepository.GetAllAsync();
+        var existingProducts = await productRepository.GetAllAsync();
         if (existingProducts.Any(p => p.Name.Equals(createDto.Name, StringComparison.OrdinalIgnoreCase)))
         {
             throw new ConflictException($"Product with name '{createDto.Name}' already exists");
@@ -314,7 +302,7 @@ public class ProductService : IProductService
         }
 
         // Business rule: Check if another product has the same name
-        var existingProducts = await _productRepository.GetAllAsync();
+        var existingProducts = await productRepository.GetAllAsync();
         if (existingProducts.Any(p => p.Id != id && p.Name.Equals(updateDto.Name, StringComparison.OrdinalIgnoreCase)))
         {
             throw new ConflictException($"Another product with name '{updateDto.Name}' already exists");
@@ -339,7 +327,7 @@ public class ProductService : IProductService
         
         if (stockDifference > 10)
         {
-            await _notificationService.SendStockChangeNotificationAsync(
+            await notificationService.SendStockChangeNotificationAsync(
                 updated.Name, 
                 original.StockQuantity, 
                 updated.StockQuantity);
