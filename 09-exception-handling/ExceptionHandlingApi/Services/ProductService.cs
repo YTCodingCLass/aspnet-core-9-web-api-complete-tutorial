@@ -32,36 +32,53 @@ public class ProductService(
         return productDtos;
     }
 
-    public async Task<ProductResponseDto?> GetProductByIdAsync(int id)
+    public async Task<ProductResponseDto> GetProductByIdAsync(int id)
     {
         logger.LogInformation(" Service: Getting product by ID: {ProductId}", id);
-        
+
+        // Validation
+        if (id <= 0)
+        {
+            throw new ValidationException("Id", "Product ID must be greater than zero");
+        }
+
         var product = await productRepository.GetByIdWithSupplierAsync(id);
-        
+
         if (product == null)
         {
             logger.LogWarning(" Service: Product not found: {ProductId}", id);
-            return null;
+            throw new NotFoundException("Product", id);
         }
-        
+
         var dto = mapper.Map<ProductResponseDto>(product);
         dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
-        
+
         return dto;
     }
 
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryAsync(string category)
     {
         logger.LogInformation(" Service: Getting products by category: {Category}", category);
-        
+
+        // Validation
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            throw new ValidationException("Category", "Category parameter is required");
+        }
+
+        if (category.Length < 2)
+        {
+            throw new ValidationException("Category", "Category must be at least 2 characters long");
+        }
+
         var products = await productRepository.GetByCategoryAsync(category);
         var productDtos = mapper.Map<IEnumerable<ProductResponseDto>>(products);
-        
+
         foreach (var dto in productDtos)
         {
             dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
         }
-        
+
         return productDtos;
     }
 
@@ -107,28 +124,28 @@ public class ProductService(
         return responseDto;
     }
 
-    public async Task<ProductResponseDto?> UpdateProductAsync(int id, UpdateProductDto updateDto)
+    public async Task<ProductResponseDto> UpdateProductAsync(int id, UpdateProductDto updateDto)
     {
         logger.LogInformation(" Service: Updating product: {ProductId}", id);
-        
+
         // Check if product exists
         var existingProduct = await productRepository.GetByIdAsync(id);
         if (existingProduct == null)
         {
             logger.LogWarning(" Service: Product not found for update: {ProductId}", id);
-            return null;
+            throw new NotFoundException("Product", id);
         }
-        
+
         // Business validation
         await ValidateProductUpdateAsync(id, updateDto);
-        
+
         // Map and update
         mapper.Map(updateDto, existingProduct);
         var updatedProduct = await productRepository.UpdateAsync(existingProduct);
-        
+
         var responseDto = mapper.Map<ProductResponseDto>(updatedProduct);
         responseDto.StockStatus = CalculateStockStatus(responseDto.StockQuantity);
-        
+
         // Business logic: Check if stock changed significantly
         if (updatedProduct != null)
             await CheckStockChangesAsync(existingProduct, updatedProduct);
@@ -166,6 +183,54 @@ public class ProductService(
     public async Task<bool> ProductExistsAsync(int id)
     {
         return await productRepository.ExistsAsync(id);
+    }
+
+    public async Task<IEnumerable<ProductResponseDto>> BulkCreateProductsAsync(List<CreateProductDto> products)
+    {
+        logger.LogInformation(" Service: Bulk creating {Count} products", products?.Count ?? 0);
+
+        // Validation: Check if products list is valid
+        var errors = new Dictionary<string, string[]>();
+
+        if (products == null || !products.Any())
+        {
+            errors.Add("Products", ["At least one product must be provided"]);
+        }
+        else if (products.Count > 100)
+        {
+            errors.Add("Products", ["Cannot create more than 100 products at once"]);
+        }
+
+        // Check for duplicate names in the request
+        if (products != null)
+        {
+            var duplicateNames = products
+                .GroupBy(p => p.Name?.ToLower())
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateNames.Any())
+            {
+                errors.Add("Products", [$"Duplicate product names found: {string.Join(", ", duplicateNames)}"]);
+            }
+        }
+
+        if (errors.Any())
+        {
+            throw new ValidationException(errors);
+        }
+
+        // Create products
+        var createdProducts = new List<ProductResponseDto>();
+        foreach (var product in products!)
+        {
+            var createdProduct = await CreateProductAsync(product);
+            createdProducts.Add(createdProduct);
+        }
+
+        logger.LogInformation(" Service: Successfully created {Count} products", createdProducts.Count);
+        return createdProducts;
     }
 
     // Private business logic methods
