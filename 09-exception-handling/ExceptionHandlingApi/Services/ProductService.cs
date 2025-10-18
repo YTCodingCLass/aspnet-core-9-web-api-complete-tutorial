@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using ExceptionHandlingApi.Models;
 using ExceptionHandlingApi.Models.DTOs;
 using ExceptionHandlingApi.Repositories;
+using ExceptionHandlingApi.Exceptions;
 
 namespace ExceptionHandlingApi.Services;
 
@@ -141,8 +142,9 @@ public class ProductService : IProductService
         responseDto.StockStatus = CalculateStockStatus(responseDto.StockQuantity);
         
         // Business logic: Check if stock changed significantly
-        await CheckStockChangesAsync(existingProduct, updatedProduct);
-        
+        if (updatedProduct != null)
+            await CheckStockChangesAsync(existingProduct, updatedProduct);
+
         _logger.LogInformation(" Service: Product updated successfully: {ProductId}", id);
         return responseDto;
     }
@@ -193,27 +195,129 @@ public class ProductService : IProductService
 
     private async Task ValidateProductCreationAsync(CreateProductDto createDto)
     {
+        var errors = new Dictionary<string, string[]>();
+
+        // Validation: Product name
+        if (string.IsNullOrWhiteSpace(createDto.Name))
+        {
+            errors.Add("Name", ["Product name is required"]);
+        }
+        else if (createDto.Name.Length < 3)
+        {
+            errors.Add("Name", ["Product name must be at least 3 characters long"]);
+        }
+        else if (createDto.Name.Length > 100)
+        {
+            errors.Add("Name", ["Product name cannot exceed 100 characters"]);
+        }
+
+        // Validation: Price
+        if (createDto.Price <= 0)
+        {
+            errors.Add("Price", ["Price must be greater than zero"]);
+        }
+        else if (createDto.Price > 1000000)
+        {
+            errors.Add("Price", ["Price cannot exceed 1,000,000"]);
+        }
+
+        // Validation: Cost Price
+        if (createDto.CostPrice < 0)
+        {
+            errors.Add("CostPrice", ["Cost price cannot be negative"]);
+        }
+
+        // Validation: Stock Quantity
+        if (createDto.StockQuantity < 0)
+        {
+            errors.Add("StockQuantity", ["Stock quantity cannot be negative"]);
+        }
+        else if (createDto.StockQuantity > 100000)
+        {
+            errors.Add("StockQuantity", ["Stock quantity cannot exceed 100,000"]);
+        }
+
+        // Validation: Category
+        if (string.IsNullOrWhiteSpace(createDto.Category))
+        {
+            errors.Add("Category", ["Category is required"]);
+        }
+
+        // Throw ValidationException if there are any validation errors
+        if (errors.Any())
+        {
+            throw new ValidationException(errors);
+        }
+
         // Business rule: Check if product name already exists
         var existingProducts = await _productRepository.GetAllAsync();
         if (existingProducts.Any(p => p.Name.Equals(createDto.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new BusinessException($"Product with name '{createDto.Name}' already exists");
+            throw new ConflictException($"Product with name '{createDto.Name}' already exists");
         }
-        
+
         // Business rule: Validate profit margin
         if (createDto.Price <= createDto.CostPrice * 1.1m) // At least 10% markup
         {
-            throw new BusinessException("Price must be at least 10% higher than cost price");
+            throw new BadRequestException("Price must be at least 10% higher than cost price");
         }
     }
 
     private async Task ValidateProductUpdateAsync(int id, UpdateProductDto updateDto)
     {
+        var errors = new Dictionary<string, string[]>();
+
+        // Validation: Product name
+        if (string.IsNullOrWhiteSpace(updateDto.Name))
+        {
+            errors.Add("Name", ["Product name is required"]);
+        }
+        else if (updateDto.Name.Length < 3)
+        {
+            errors.Add("Name", ["Product name must be at least 3 characters long"]);
+        }
+        else if (updateDto.Name.Length > 100)
+        {
+            errors.Add("Name", ["Product name cannot exceed 100 characters"]);
+        }
+
+        // Validation: Price
+        if (updateDto.Price <= 0)
+        {
+            errors.Add("Price", ["Price must be greater than zero"]);
+        }
+        else if (updateDto.Price > 1000000)
+        {
+            errors.Add("Price", ["Price cannot exceed 1,000,000"]);
+        }
+
+        // Validation: Stock Quantity
+        if (updateDto.StockQuantity < 0)
+        {
+            errors.Add("StockQuantity", ["Stock quantity cannot be negative"]);
+        }
+        else if (updateDto.StockQuantity > 100000)
+        {
+            errors.Add("StockQuantity", ["Stock quantity cannot exceed 100,000"]);
+        }
+
+        // Validation: Category
+        if (string.IsNullOrWhiteSpace(updateDto.Category))
+        {
+            errors.Add("Category", ["Category is required"]);
+        }
+
+        // Throw ValidationException if there are any validation errors
+        if (errors.Any())
+        {
+            throw new ValidationException(errors);
+        }
+
         // Business rule: Check if another product has the same name
         var existingProducts = await _productRepository.GetAllAsync();
         if (existingProducts.Any(p => p.Id != id && p.Name.Equals(updateDto.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new BusinessException($"Another product with name '{updateDto.Name}' already exists");
+            throw new ConflictException($"Another product with name '{updateDto.Name}' already exists");
         }
     }
 
@@ -223,9 +327,9 @@ public class ProductService : IProductService
         var stockValue = product.Price * product.StockQuantity;
         if (stockValue > 10000m)
         {
-            throw new BusinessException($"Cannot delete product with high stock value: ${stockValue:F2}");
+            throw new BadRequestException($"Cannot delete product with high stock value: ${stockValue:F2}");
         }
-        
+
         await Task.CompletedTask; // Placeholder for async operations
     }
 
