@@ -11,7 +11,7 @@ builder.Services.AddControllers();
 
 // Register Problem Details service (required for exception handlers)
 builder.Services.AddProblemDetails();
-
+//
 // Register exception handlers in order of specificity
 // More specific handlers should be registered first
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();

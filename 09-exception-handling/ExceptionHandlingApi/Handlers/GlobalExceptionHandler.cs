@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using ExceptionHandlingApi.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -48,12 +47,7 @@ public class GlobalExceptionHandler(
 
     private ProblemDetails CreateProblemDetails(HttpContext context, Exception exception)
     {
-        var problemDetails = exception switch
-        {
-            ValidationException validationEx => CreateValidationProblemDetails(context, validationEx),
-            BaseException baseEx => CreateBaseProblemDetails(context, baseEx),
-            _ => CreateGenericProblemDetails(context, exception)
-        };
+        var problemDetails = CreateGenericProblemDetails(context, exception);
 
         // Add common extensions
         AddCommonExtensions(problemDetails, context, exception);
@@ -61,58 +55,19 @@ public class GlobalExceptionHandler(
         return problemDetails;
     }
 
-    private ValidationProblemDetails CreateValidationProblemDetails(
-        HttpContext context,
-        ValidationException validationException)
-    {
-        var problemDetails = new ValidationProblemDetails(validationException.Errors)
-        {
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-            Title = "One or more validation errors occurred.",
-            Status = validationException.StatusCode,
-            Detail = validationException.Message,
-            Instance = context.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = validationException.ErrorCode
-            }
-        };
-
-        return problemDetails;
-    }
-
-    private ProblemDetails CreateBaseProblemDetails(
-        HttpContext context,
-        BaseException baseException)
-    {
-        return new ProblemDetails
-        {
-            Type = GetProblemType(baseException.StatusCode),
-            Title = GetTitle(baseException.StatusCode),
-            Status = baseException.StatusCode,
-            Detail = baseException.Message,
-            Instance = context.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = baseException.ErrorCode
-            }
-        };
-    }
-
     private ProblemDetails CreateGenericProblemDetails(
         HttpContext context,
         Exception exception)
     {
-        var statusCode = StatusCodes.Status500InternalServerError;
         var detail = environment.IsDevelopment()
             ? exception.Message
             : "An error occurred while processing your request.";
 
         return new ProblemDetails
         {
-            Type = GetProblemType(statusCode),
-            Title = GetTitle(statusCode),
-            Status = statusCode,
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+            Title = "Internal Server Error",
+            Status = StatusCodes.Status500InternalServerError,
             Detail = detail,
             Instance = context.Request.Path,
             Extensions =
@@ -155,37 +110,5 @@ public class GlobalExceptionHandler(
                 };
             }
         }
-    }
-
-    private static string GetProblemType(int statusCode)
-    {
-        // You can customize these to point to your own error documentation
-        return statusCode switch
-        {
-            400 => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-            401 => "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
-            403 => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
-            404 => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
-            409 => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
-            422 => "https://datatracker.ietf.org/doc/html/rfc4918#section-11.2",
-            500 => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
-            _ => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6"
-        };
-    }
-
-    private static string GetTitle(int statusCode)
-    {
-        return statusCode switch
-        {
-            400 => "Bad Request",
-            401 => "Unauthorized",
-            403 => "Forbidden",
-            404 => "Not Found",
-            409 => "Conflict",
-            422 => "Unprocessable Entity",
-            500 => "Internal Server Error",
-            503 => "Service Unavailable",
-            _ => "An error occurred"
-        };
     }
 }

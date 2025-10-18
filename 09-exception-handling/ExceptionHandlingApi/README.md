@@ -1,670 +1,693 @@
-# Repository and Service Pattern with Dependency Injection
+# Global Exception Handling with RFC 7807 Problem Details
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)
-![Repository Pattern](https://img.shields.io/badge/Repository_Pattern-Architecture-FF6B35?style=flat-square)
-![Service Layer](https://img.shields.io/badge/Service_Layer-Business_Logic-2E8B57?style=flat-square)
+![Exception Handling](https://img.shields.io/badge/Exception_Handling-Middleware-FF6B35?style=flat-square)
+![RFC 7807](https://img.shields.io/badge/RFC_7807-Problem_Details-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Repository and Service Pattern Tutorial](#)** *(Add your video link here)*
+**🔗 [Watch Global Exception Handling Tutorial](#)** *(Add your video link here)*
 
 ## 🎯 Learning Objectives
 
 By the end of this tutorial, you'll master:
-- ✅ **Repository Pattern** - Abstracting data access layer from business logic
-- ✅ **Service Layer Architecture** - Implementing business logic and service coordination
-- ✅ **Dependency Injection** - Managing component dependencies and lifetimes
-- ✅ **DTO Pattern** - Separating internal models from API contracts
-- ✅ **AutoMapper Integration** - Automated object-to-object mapping
-- ✅ **Clean Architecture** - Building maintainable, testable, and scalable APIs
+- ✅ **Global Exception Handling** - Centralized error handling using `IExceptionHandler`
+- ✅ **RFC 7807 Problem Details** - Standardized error responses
+- ✅ **Custom Exception Hierarchy** - Structured exception types with HTTP status codes
+- ✅ **Exception Handlers Chain** - Specific handlers for different exception types
+- ✅ **Service Layer Validation** - Moving validation logic from controllers to services
+- ✅ **Production-Ready Error Handling** - Environment-aware error details
 
 ## 🚀 What We Build
 
-A **Product Management API** that demonstrates:
-- **Repository Pattern** - Clean data access abstraction
-- **Service Layer** - Business logic and validation
-- **Dependency Injection** - Proper component wiring
-- **AutoMapper Integration** - DTO mapping automation
-- **Notification Service** - Cross-cutting concerns
+A **Production-Ready Exception Handling System** that demonstrates:
+- **Global Exception Handler** - Catches all unhandled exceptions
+- **Business Exception Handler** - Handles domain-specific exceptions
+- **Validation Exception Handler** - Handles validation errors with detailed field-level errors
+- **Custom Exception Types** - `NotFoundException`, `BadRequestException`, `ValidationException`, etc.
+- **Service Layer Validation** - Comprehensive validation in the service layer
+- **RFC 7807 Compliance** - Standard problem details format
 
 ## 📁 Project Structure
 
 ```
-RepositoryAndServicesApi/
+ExceptionHandlingApi/
 ├── Controllers/
-│   ├── ProductsController.cs        # Products API controller
+│   ├── ProductsController.cs        # Thin controllers with no exception handling
 │   └── ServiceLifetimeController.cs # Service lifetime demonstration
+├── Exceptions/                       # ⭐ Custom exception types
+│   ├── BaseException.cs             # Base exception with status code & error code
+│   ├── NotFoundException.cs         # 404 Not Found
+│   ├── BadRequestException.cs       # 400 Bad Request
+│   ├── ValidationException.cs       # 422 Unprocessable Entity (with error dictionary)
+│   ├── UnauthorizedException.cs     # 401 Unauthorized
+│   ├── ForbiddenException.cs        # 403 Forbidden
+│   └── ConflictException.cs         # 409 Conflict
+├── Handlers/                         # ⭐ Exception handlers
+│   ├── GlobalExceptionHandler.cs    # Catches all unhandled exceptions
+│   ├── BusinessExceptionHandler.cs  # Handles BaseException descendants
+│   └── ValidationExceptionHandler.cs # Handles validation errors
 ├── Models/
-│   ├── Product.cs                   # Product entity model
-│   ├── Supplier.cs                  # Supplier entity model
+│   ├── Product.cs                   # Product entity
+│   ├── Supplier.cs                  # Supplier entity
 │   └── DTOs/
-│       ├── CreateProductDto.cs      # Create product request DTO
-│       ├── UpdateProductDto.cs      # Update product request DTO
-│       ├── PatchProductDto.cs       # Patch product request DTO
-│       └── ProductResponseDto.cs    # Product response DTO with stock status
+│       ├── CreateProductDto.cs      # Create product request
+│       ├── UpdateProductDto.cs      # Update product request
+│       └── ProductResponseDto.cs    # Product response with stock status
 ├── Repositories/
-│   ├── IProductRepository.cs        # Repository interface for data access
+│   ├── IProductRepository.cs        # Repository interface
 │   └── ProductRepository.cs         # Repository implementation
 ├── Services/
-│   ├── IProductService.cs           # Service interface for business logic
-│   ├── ProductService.cs            # Service implementation
+│   ├── IProductService.cs           # Service interface
+│   ├── ProductService.cs            # Service with validation logic ⭐
 │   ├── INotificationService.cs      # Notification service interface
-│   └── NotificationService.cs       # Notification service implementation
+│   └── NotificationService.cs       # Notification implementation
 ├── Data/
 │   └── InMemoryDatabase.cs          # In-memory data store
-├── Services/
-│   └── BusinessException.cs         # Business logic exceptions (moved to Services folder)
 ├── Mappings/
 │   └── MappingProfile.cs            # AutoMapper configuration
-├── Program.cs                       # DI container registration and app configuration
-└── RepositoryAndServicesApi.http    # HTTP requests for testing
+├── Program.cs                       # Exception handlers registration ⭐
+└── ExceptionHandlingApi.http        # HTTP requests for testing
 ```
 
-## 🏗️ Architecture Overview
+## 🏗️ Exception Handling Architecture
 
-The architecture follows a clean layered approach as illustrated in the diagram:
+### **Exception Handling Flow**
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  REST APIs                      │
-├─────────────────────────────────────────────────┤
-│              REST CONTROLLER                    │
-├─────────┬─────────────────────────────┬─────────┤
-│  DTOs   │       SERVICES              │ENTITIES │
-│         │         +                   │         │
-│         │       MAPPERS               │         │
-├─────────┴─────────────────────────────┴─────────┤
-│              JPA REPOSITORY                     │
-├─────────────────────────────────────────────────┤
-│                  Database                       │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│            HTTP Request (Controller)                │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│         Service Layer (Business Logic)              │
+│    • Validation                                     │
+│    • Business Rules                                 │
+│    • Data Processing                                │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  │ Throws Exception
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│      UseExceptionHandler() Middleware               │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│    Exception Handlers Chain (Order Matters!)        │
+│    1. ValidationExceptionHandler ─┐                 │
+│    2. BusinessExceptionHandler ───┼─► Match?        │
+│    3. GlobalExceptionHandler ─────┘                 │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│    RFC 7807 Problem Details JSON Response           │
+│    {                                                 │
+│      "type": "...",                                  │
+│      "title": "...",                                 │
+│      "status": 400,                                  │
+│      "detail": "...",                                │
+│      "errors": {...},                                │
+│      "errorCode": "...",                             │
+│      "timestamp": "...",                             │
+│      "traceId": "..."                                │
+│    }                                                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-### **Layer Responsibilities:**
-- **REST Controller**: HTTP endpoints, request/response handling, validation
-- **Services**: Business logic, data transformation, cross-cutting concerns
-- **Mappers**: Object mapping between DTOs and Entities using AutoMapper
-- **Repository**: Data access abstraction, CRUD operations
-- **DTOs**: Data transfer objects for API contracts
-- **Entities**: Domain models representing business data
+## 🎨 Custom Exception Hierarchy
 
-### **1. Repository Pattern Implementation**
+### **Base Exception**
 ```csharp
-// Repositories/IProductRepository.cs - Data Access Abstraction
-public interface IProductRepository
+// Exceptions/BaseException.cs
+public abstract class BaseException : Exception
 {
-    Task<IEnumerable<Product>> GetAllAsync();
-    Task<Product?> GetByIdAsync(int id);
-    Task<Product?> GetByIdWithSupplierAsync(int id);
-    Task<IEnumerable<Product>> GetByCategoryAsync(string category);
-    Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold = 10);
-    Task<Product> CreateAsync(Product product);
-    Task<Product?> UpdateAsync(Product product);
-    Task<bool> DeleteAsync(int id);
-    Task<bool> ExistsAsync(int id);
-}
+    public int StatusCode { get; }
+    public string ErrorCode { get; }
 
-// Repositories/ProductRepository.cs - Data Access Implementation
-public class ProductRepository : IProductRepository
-{
-    private readonly ILogger<ProductRepository> _logger;
-
-    public ProductRepository(ILogger<ProductRepository> logger)
+    protected BaseException(string message, int statusCode, string errorCode)
+        : base(message)
     {
-        _logger = logger;
+        StatusCode = statusCode;
+        ErrorCode = errorCode;
     }
-
-    public async Task<IEnumerable<Product>> GetAllAsync()
-    {
-        _logger.LogInformation("🗃️ Repository: Getting all products");
-        
-        return InMemoryDatabase.Products
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.Name)
-            .ToList();
-    }
-    
-    // Other repository methods...
 }
 ```
 
-### **2. Service Layer Implementation**
+### **Specific Exceptions**
+
+| Exception | HTTP Status | Error Code | Use Case |
+|-----------|-------------|------------|----------|
+| `NotFoundException` | 404 | `NOT_FOUND` | Resource not found |
+| `BadRequestException` | 400 | `BAD_REQUEST` | Invalid request data or business rule violation |
+| `ValidationException` | 422 | `VALIDATION_ERROR` | Input validation failures (with field-level errors) |
+| `UnauthorizedException` | 401 | `UNAUTHORIZED` | Authentication required |
+| `ForbiddenException` | 403 | `FORBIDDEN` | Insufficient permissions |
+| `ConflictException` | 409 | `CONFLICT` | Resource conflict (e.g., duplicate name) |
+
+### **Exception Examples**
+
 ```csharp
-// Services/IProductService.cs - Business Logic Interface
-public interface IProductService
+// Single field validation
+throw new ValidationException("Id", "Product ID must be greater than zero");
+
+// Multiple field validation
+var errors = new Dictionary<string, string[]>
 {
-    Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync();
-    Task<ProductResponseDto?> GetProductByIdAsync(int id);
-    Task<ProductResponseDto> CreateProductAsync(CreateProductDto createDto);
-    Task<ProductResponseDto?> UpdateProductAsync(int id, UpdateProductDto updateDto);
-    Task<bool> DeleteProductAsync(int id);
-}
+    { "Name", new[] { "Product name is required" } },
+    { "Price", new[] { "Price must be greater than zero" } }
+};
+throw new ValidationException(errors);
 
-// Services/ProductService.cs - Business Logic Implementation
-public class ProductService : IProductService
+// Not found
+throw new NotFoundException("Product", id);
+
+// Business rule violation
+throw new BadRequestException("Price must be at least 10% higher than cost price");
+
+// Conflict
+throw new ConflictException($"Product with name '{name}' already exists");
+```
+
+## 🔧 Exception Handlers Implementation
+
+### **1. Validation Exception Handler** (Most Specific)
+```csharp
+// Handlers/ValidationExceptionHandler.cs
+public class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger)
+    : IExceptionHandler
 {
-    private readonly IProductRepository _productRepository;
-    private readonly INotificationService _notificationService;
-    private readonly IMapper _mapper;
-    private readonly ILogger<ProductService> _logger;
-
-    public ProductService(
-        IProductRepository productRepository,
-        INotificationService notificationService,
-        IMapper mapper,
-        ILogger<ProductService> logger)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
     {
-        _productRepository = productRepository;
-        _notificationService = notificationService;
-        _mapper = mapper;
-        _logger = logger;
-    }
-
-    public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync()
-    {
-        _logger.LogInformation("⚙️ Service: Getting all products");
-        
-        var products = await _productRepository.GetAllAsync();
-        var productDtos = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
-        
-        // Business logic: Calculate stock status
-        foreach (var dto in productDtos)
+        if (exception is not ValidationException validationException)
         {
-            dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
+            return false; // Let next handler try
         }
-        
-        return productDtos;
-    }
-    
-    // Business logic methods...
-    private string CalculateStockStatus(int stockQuantity)
-    {
-        return stockQuantity switch
+
+        logger.LogWarning("Validation error: {ErrorCount} errors",
+            validationException.Errors.Count);
+
+        var problemDetails = new ValidationProblemDetails(validationException.Errors)
         {
-            0 => "Out of Stock",
-            <= 5 => "Critical Low",
-            <= 10 => "Low Stock",
-            <= 50 => "Normal",
-            _ => "Well Stocked"
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+            Title = "One or more validation errors occurred.",
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Detail = validationException.Message,
+            Instance = httpContext.Request.Path,
+            Extensions =
+            {
+                ["errorCode"] = "VALIDATION_ERROR",
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
+            }
         };
+
+        httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+        httpContext.Response.ContentType = "application/problem+json";
+
+        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        return true;
     }
 }
 ```
 
-### **3. Dependency Injection Registration**
+### **2. Business Exception Handler** (Specific)
 ```csharp
-// Program.cs - Service Registration
+// Handlers/BusinessExceptionHandler.cs
+public class BusinessExceptionHandler(ILogger<BusinessExceptionHandler> logger)
+    : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        if (exception is not BaseException baseException ||
+            exception is ValidationException)
+        {
+            return false; // ValidationException handled by specific handler
+        }
+
+        logger.LogWarning("Business exception: {ErrorCode} - {Message}",
+            baseException.ErrorCode, baseException.Message);
+
+        var problemDetails = new ProblemDetails
+        {
+            Type = GetProblemTypeUrl(baseException.StatusCode),
+            Title = GetStatusTitle(baseException.StatusCode),
+            Status = baseException.StatusCode,
+            Detail = baseException.Message,
+            Instance = httpContext.Request.Path,
+            Extensions =
+            {
+                ["errorCode"] = baseException.ErrorCode,
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
+            }
+        };
+
+        httpContext.Response.StatusCode = baseException.StatusCode;
+        httpContext.Response.ContentType = "application/problem+json";
+
+        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        return true;
+    }
+}
+```
+
+### **3. Global Exception Handler** (Catch-All)
+```csharp
+// Handlers/GlobalExceptionHandler.cs
+public class GlobalExceptionHandler(
+    ILogger<GlobalExceptionHandler> logger,
+    IHostEnvironment environment)
+    : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+
+        var problemDetails = new ProblemDetails
+        {
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+            Title = "Internal Server Error",
+            Status = StatusCodes.Status500InternalServerError,
+            Detail = environment.IsDevelopment()
+                ? exception.Message
+                : "An error occurred while processing your request.",
+            Instance = httpContext.Request.Path,
+            Extensions =
+            {
+                ["errorCode"] = "INTERNAL_SERVER_ERROR",
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
+            }
+        };
+
+        // In development, add debug information
+        if (environment.IsDevelopment())
+        {
+            problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
+            problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+
+            if (exception.InnerException != null)
+            {
+                problemDetails.Extensions["innerException"] = new
+                {
+                    message = exception.InnerException.Message,
+                    type = exception.InnerException.GetType().Name
+                };
+            }
+        }
+
+        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        httpContext.Response.ContentType = "application/problem+json";
+
+        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        return true;
+    }
+}
+```
+
+## ⚙️ Service Layer Validation
+
+### **Moving Validation from Controllers to Services**
+
+**❌ Before (Controller-based validation):**
+```csharp
+[HttpGet("{id}")]
+public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
+{
+    if (id <= 0)
+    {
+        throw new ValidationException("Id", "Product ID must be greater than zero");
+    }
+
+    var product = await productService.GetProductByIdAsync(id);
+    if (product == null)
+    {
+        throw new NotFoundException("Product", id);
+    }
+    return Ok(product);
+}
+```
+
+**✅ After (Service-based validation):**
+```csharp
+// Controller - Thin and clean
+[HttpGet("{id}")]
+public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
+{
+    var product = await productService.GetProductByIdAsync(id);
+    return Ok(product);
+}
+
+// Service - Handles all validation
+public async Task<ProductResponseDto> GetProductByIdAsync(int id)
+{
+    // Validation
+    if (id <= 0)
+    {
+        throw new ValidationException("Id", "Product ID must be greater than zero");
+    }
+
+    var product = await productRepository.GetByIdWithSupplierAsync(id);
+    if (product == null)
+    {
+        throw new NotFoundException("Product", id);
+    }
+
+    var dto = mapper.Map<ProductResponseDto>(product);
+    dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
+    return dto;
+}
+```
+
+### **Comprehensive Validation Example**
+
+```csharp
+private async Task ValidateProductCreationAsync(CreateProductDto createDto)
+{
+    var errors = new Dictionary<string, string[]>();
+
+    // Validation: Product name
+    if (string.IsNullOrWhiteSpace(createDto.Name))
+    {
+        errors.Add("Name", ["Product name is required"]);
+    }
+    else if (createDto.Name.Length < 3)
+    {
+        errors.Add("Name", ["Product name must be at least 3 characters long"]);
+    }
+    else if (createDto.Name.Length > 100)
+    {
+        errors.Add("Name", ["Product name cannot exceed 100 characters"]);
+    }
+
+    // Validation: Price
+    if (createDto.Price <= 0)
+    {
+        errors.Add("Price", ["Price must be greater than zero"]);
+    }
+    else if (createDto.Price > 1000000)
+    {
+        errors.Add("Price", ["Price cannot exceed 1,000,000"]);
+    }
+
+    // Validation: Stock Quantity
+    if (createDto.StockQuantity < 0)
+    {
+        errors.Add("StockQuantity", ["Stock quantity cannot be negative"]);
+    }
+
+    // Throw ValidationException if there are any errors
+    if (errors.Any())
+    {
+        throw new ValidationException(errors);
+    }
+
+    // Business rule: Check if product name already exists
+    var existingProducts = await productRepository.GetAllAsync();
+    if (existingProducts.Any(p => p.Name.Equals(createDto.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        throw new ConflictException($"Product with name '{createDto.Name}' already exists");
+    }
+
+    // Business rule: Validate profit margin
+    if (createDto.Price <= createDto.CostPrice * 1.1m)
+    {
+        throw new BadRequestException("Price must be at least 10% higher than cost price");
+    }
+}
+```
+
+## 🔌 Program.cs Configuration
+
+```csharp
+// Register Problem Details service
+builder.Services.AddProblemDetails();
+
+// Register exception handlers in order of specificity
+// More specific handlers should be registered first
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// Other services...
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+var app = builder.Build();
+
+// *** IMPORTANT: Add Exception Handler middleware early in pipeline ***
+app.UseExceptionHandler();
+
+// Other middleware...
+app.UseSwagger();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
 ```
 
-## 🎮 Controller Implementation
+## 📋 RFC 7807 Problem Details Response Format
 
-### **Products Controller with Clean Architecture**
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class ProductsController : ControllerBase
+### **Validation Error Response (422)**
+```json
 {
-    private readonly IProductService _productService;
-    private readonly ILogger<ProductsController> _logger;
-
-    public ProductsController(IProductService productService, ILogger<ProductsController> logger)
-    {
-        _productService = productService;
-        _logger = logger;
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProducts()
-    {
-        _logger.LogInformation("🎮 Controller: Getting all products");
-        var products = await _productService.GetAllProductsAsync();
-        return Ok(products);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
-    {
-        _logger.LogInformation("🎮 Controller: Getting product {ProductId}", id);
-        var product = await _productService.GetProductByIdAsync(id);
-        
-        if (product == null)
-        {
-            return NotFound($"Product with ID {id} not found");
-        }
-        
-        return Ok(product);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<ProductResponseDto>> CreateProduct(CreateProductDto createProductDto)
-    {
-        _logger.LogInformation("🎮 Controller: Creating product {ProductName}", createProductDto.Name);
-        
-        try
-        {
-            var newProduct = await _productService.CreateProductAsync(createProductDto);
-            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.Id }, newProduct);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
-
-    [HttpPut("{id}")]
-    public async Task<ActionResult<ProductResponseDto>> UpdateProduct(int id, UpdateProductDto updateProductDto)
-    {
-        _logger.LogInformation("🎮 Controller: Updating product {ProductId}", id);
-        
-        try
-        {
-            var updatedProduct = await _productService.UpdateProductAsync(id, updateProductDto);
-            if (updatedProduct == null)
-            {
-                return NotFound($"Product with ID {id} not found");
-            }
-            return Ok(updatedProduct);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProduct(int id)
-    {
-        _logger.LogInformation("🎮 Controller: Deleting product {ProductId}", id);
-        
-        try
-        {
-            var success = await _productService.DeleteProductAsync(id);
-            if (!success)
-            {
-                return NotFound($"Product with ID {id} not found");
-            }
-            return NoContent();
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 422,
+  "detail": "One or more validation errors occurred.",
+  "instance": "/api/products",
+  "errors": {
+    "Name": [
+      "Product name is required"
+    ],
+    "Price": [
+      "Price must be greater than zero"
+    ],
+    "Category": [
+      "Category is required"
+    ]
+  },
+  "errorCode": "VALIDATION_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
 }
 ```
 
-## 🏛️ Architecture Benefits
-
-### **🗃️ Repository Pattern Benefits**
-- **Data Access Abstraction** - Hide data storage implementation details
-- **Testability** - Easy to mock data access for unit tests
-- **Flexibility** - Switch between different data sources without changing business logic
-- **Single Responsibility** - Repositories only handle data access operations
-
-```csharp
-// Easy to switch from in-memory to database
-builder.Services.AddScoped<IProductRepository, ProductRepository>(); // In-memory
-// builder.Services.AddScoped<IProductRepository, SqlProductRepository>(); // SQL Server
-// builder.Services.AddScoped<IProductRepository, MongoProductRepository>(); // MongoDB
-```
-
-### **⚙️ Service Layer Benefits**
-- **Business Logic Encapsulation** - All business rules in one place
-- **Cross-cutting Concerns** - Handle notifications, validation, logging
-- **DTO Transformation** - Convert between domain models and DTOs
-- **Transaction Management** - Coordinate multiple repository operations
-
-```csharp
-// Service coordinates multiple operations
-public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto createDto)
+### **Not Found Error Response (404)**
+```json
 {
-    // 1. Validate business rules
-    await ValidateProductCreationAsync(createDto);
-    
-    // 2. Transform DTO to domain model
-    var product = _mapper.Map<Product>(createDto);
-    
-    // 3. Save to repository
-    var createdProduct = await _productRepository.CreateAsync(product);
-    
-    // 4. Send notifications
-    await _notificationService.SendProductCreatedNotificationAsync(responseDto);
-    
-    // 5. Return response DTO
-    return _mapper.Map<ProductResponseDto>(createdProduct);
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Product with key '999' was not found.",
+  "instance": "/api/products/999",
+  "errorCode": "NOT_FOUND",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
 }
 ```
 
-### **🔗 Dependency Injection Benefits**
-- **Loose Coupling** - Components depend on abstractions, not implementations
-- **Inversion of Control** - Framework manages object lifecycle and dependencies
-- **Configuration Flexibility** - Easy to change implementations via registration
-- **Scoped Lifetime Management** - Proper resource management and disposal
-
-```csharp
-// Clean separation of concerns through DI
-builder.Services.AddScoped<IProductRepository, ProductRepository>();    // Data Access
-builder.Services.AddScoped<IProductService, ProductService>();          // Business Logic
-builder.Services.AddScoped<INotificationService, NotificationService>(); // Cross-cutting
-builder.Services.AddAutoMapper(typeof(MappingProfile));                 // Object Mapping
+### **Business Rule Violation (400)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Price must be at least 10% higher than cost price",
+  "instance": "/api/products",
+  "errorCode": "BAD_REQUEST",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
 ```
 
-## 🧪 Testing the API
-
-### **Product CRUD Operations**
-
-#### **1. Get All Products**
-```http
-GET https://localhost:7xxx/api/products
+### **Conflict Error (409)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Product with name 'Laptop Pro' already exists",
+  "instance": "/api/products",
+  "errorCode": "CONFLICT",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
 ```
 
-#### **2. Get Product by ID**
-```http
-GET https://localhost:7xxx/api/products/1
+### **Unhandled Exception - Development (500)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+  "title": "Internal Server Error",
+  "status": 500,
+  "detail": "Object reference not set to an instance of an object.",
+  "instance": "/api/products",
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00",
+  "exceptionType": "NullReferenceException",
+  "stackTrace": "at ExceptionHandlingApi.Services.ProductService.GetAllProductsAsync()..."
+}
 ```
 
-#### **3. Create New Product**
+### **Unhandled Exception - Production (500)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+  "title": "Internal Server Error",
+  "status": 500,
+  "detail": "An error occurred while processing your request.",
+  "instance": "/api/products",
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
+```
+
+## 🧪 Testing the Exception Handling
+
+### **Test Scenarios**
+
+1. **Validation Error** - Empty product name
 ```http
 POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
-  "name": "Wireless Headphones",
-  "price": 99.99,
-  "costPrice": 50.00,
-  "category": "Electronics",
-  "stockQuantity": 25,
-  "supplierId": 1
+  "name": "",
+  "price": -10,
+  "category": ""
 }
 ```
 
-#### **4. Update Existing Product**
+2. **Not Found** - Invalid product ID
 ```http
-PUT https://localhost:7xxx/api/products/1
+GET https://localhost:7xxx/api/products/99999
+```
+
+3. **Business Rule Violation** - Low profit margin
+```http
+POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
-  "name": "Updated Laptop Pro",
-  "price": 1299.99,
-  "costPrice": 800.00,
-  "category": "Electronics",
-  "stockQuantity": 15,
-  "supplierId": 2
+  "name": "Test Product",
+  "price": 100,
+  "costPrice": 95,
+  "category": "Test"
 }
 ```
 
-#### **5. Delete Product**
+4. **Conflict** - Duplicate product name
 ```http
-DELETE https://localhost:7xxx/api/products/1
-```
+POST https://localhost:7xxx/api/products
+Content-Type: application/json
 
-### **Sample API Response**
-```json
 {
-  "id": 1,
   "name": "Laptop Pro",
-  "price": 1199.99,
-  "category": "Electronics",
-  "stockQuantity": 10,
-  "stockStatus": "Low Stock",
-  "supplier": {
-    "id": 1,
-    "name": "Tech Solutions Inc.",
-    "email": "contact@techsolutions.com"
-  },
-  "createdAt": "2025-01-15T10:30:00Z",
-  "updatedAt": "2025-01-15T14:45:00Z"
+  "price": 1200,
+  "costPrice": 800,
+  "category": "Electronics"
 }
 ```
 
-### **Console Logging Output**
+5. **Bulk Create with Validation**
+```http
+POST https://localhost:7xxx/api/products/bulk-create
+Content-Type: application/json
+
+[
+  {
+    "name": "Product 1",
+    "price": 100
+  },
+  {
+    "name": "Product 1",
+    "price": 100
+  }
+]
 ```
-🗃️ Repository: Getting all products
-⚙️ Service: Getting all products
-⚙️ Service: Retrieved 5 products
-🎮 Controller: Getting all products
 
-🗃️ Repository: Creating new product: Wireless Headphones  
-⚙️ Service: Creating new product: Wireless Headphones
-📧 Notification: Product created - Wireless Headphones
-🎮 Controller: Creating product Wireless Headphones
-```
+## 🎓 Key Benefits
 
-## 🎓 Key Architecture Patterns
+### **1. Centralized Error Handling**
+- ✅ All exceptions handled in one place
+- ✅ No try-catch blocks in controllers
+- ✅ Consistent error response format
+- ✅ Easy to maintain and extend
 
-### **1. Repository Pattern Implementation**
-- ✅ **Data Access Abstraction** - `IProductRepository` hides data storage details
-- ✅ **Async Operations** - All repository methods are asynchronous
-- ✅ **Entity Relationships** - `GetByIdWithSupplierAsync` loads related entities
-- ✅ **Filtering Support** - Methods for category and low-stock filtering
+### **2. RFC 7807 Compliance**
+- ✅ Standard problem details format
+- ✅ Machine-readable error responses
+- ✅ Better client integration
+- ✅ Industry best practices
 
-### **2. Service Layer Implementation**
-- ✅ **Business Logic Encapsulation** - Stock status calculation, validation rules
-- ✅ **DTO Mapping** - Automatic conversion between entities and DTOs
-- ✅ **Cross-cutting Concerns** - Notifications, logging, exception handling
-- ✅ **Validation** - Business rule enforcement (profit margins, duplicate names)
+### **3. Clean Controllers**
+- ✅ Thin controllers with no exception handling logic
+- ✅ Focus on HTTP concerns only
+- ✅ Better readability and maintainability
 
-### **3. Dependency Injection Benefits**
-- ✅ **Loose Coupling** - Controller → Service → Repository chain
-- ✅ **Testability** - Easy to mock dependencies for unit testing
-- ✅ **Single Responsibility** - Each component has one clear purpose
-- ✅ **Configuration Flexibility** - Easy to swap implementations
+### **4. Service Layer Validation**
+- ✅ Reusable validation logic
+- ✅ Works across different entry points (REST, gRPC, etc.)
+- ✅ Better separation of concerns
+- ✅ Easier to test
 
-### **4. Clean Architecture Flow**
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   DTOs      │◄──►│ Controller  │────│   Service   │────│ Repository  │
-│             │    │             │    │             │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-                           │                   │                   │
-                           ▼                   ▼                   ▼
-                   HTTP Handling      Business Logic      Data Access
-                   Input Validation   Data Transformation Query Operations
-                   Error Responses    Cross-cutting       Entity Mapping
-                                     Service Coordination
-                                           │
-                                           ▼
-                                   ┌─────────────┐    ┌─────────────┐
-                                   │   Mappers   │◄──►│  Entities   │
-                                   │(AutoMapper) │    │ (Models)    │
-                                   └─────────────┘    └─────────────┘
-```
+### **5. Environment-Aware**
+- ✅ Detailed error info in Development
+- ✅ Sanitized responses in Production
+- ✅ Security best practices
+
+### **6. Structured Exception Hierarchy**
+- ✅ Clear exception types for different scenarios
+- ✅ HTTP status codes built-in
+- ✅ Custom error codes for client handling
+- ✅ Type-safe exception handling
 
 ## 🔧 Running the Project
 
 ```bash
-cd RepositoryAndServicesApi
+cd ExceptionHandlingApi
 dotnet restore
 dotnet run
 ```
 
 **Swagger UI**: `https://localhost:7xxx/swagger`
 **Products API**: `https://localhost:7xxx/api/products`
-**Service Demo**: `https://localhost:7xxx/api/servicelifetime/demo`
-
-## 🏗️ Implementation Best Practices
-
-### **Repository Pattern Guidelines**
-```csharp
-// ✅ DO: Keep repositories focused on data access
-public interface IProductRepository
-{
-    Task<IEnumerable<Product>> GetAllAsync();           // Query operations
-    Task<Product> CreateAsync(Product product);         // Command operations
-    Task<bool> ExistsAsync(int id);                    // Utility operations
-}
-
-// ❌ DON'T: Put business logic in repositories
-public interface IProductRepository
-{
-    Task<decimal> CalculateTotalValue();  // Business logic belongs in service
-    Task SendLowStockAlert();            // Cross-cutting concern belongs in service
-}
-```
-
-### **Service Layer Guidelines**
-```csharp
-// ✅ DO: Encapsulate business logic in services
-public class ProductService : IProductService
-{
-    // Business validation
-    private async Task ValidateProductCreationAsync(CreateProductDto dto) { }
-    
-    // Business calculations
-    private string CalculateStockStatus(int stock) { }
-    
-    // Coordinate multiple operations
-    public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto dto) { }
-}
-
-// ❌ DON'T: Put data access logic in services
-public class ProductService : IProductService
-{
-    public async Task<Product> GetProductAsync(int id)
-    {
-        // Don't write SQL or data access code here
-        var sql = "SELECT * FROM Products WHERE Id = @id";
-        return await _connection.QueryAsync<Product>(sql, new { id });
-    }
-}
-```
-
-### **Dependency Injection Guidelines**
-```csharp
-// ✅ DO: Use appropriate lifetimes
-builder.Services.AddScoped<IProductRepository, ProductRepository>();    // Per-request
-builder.Services.AddScoped<IProductService, ProductService>();          // Per-request
-builder.Services.AddSingleton<INotificationService, NotificationService>(); // Stateless
-builder.Services.AddTransient<IValidator<CreateProductDto>, ProductValidator>(); // Lightweight
-
-// ❌ DON'T: Mix lifetimes incorrectly
-builder.Services.AddSingleton<IProductService, ProductService>(); // BAD: Service depends on scoped repo
-```
-
-### **⚠️ Common Anti-patterns**
-- **Don't** put business logic in controllers - use services
-- **Don't** access repositories directly from controllers - use services
-- **Don't** return domain entities from controllers - use DTOs
-- **Don't** catch exceptions in repositories - let services handle them
-
-## 🔍 Unit Testing with Repository and Service Pattern
-
-### **Repository Testing with Mocks**
-```csharp
-[Test]
-public async Task GetAllAsync_ShouldReturnActiveProducts()
-{
-    // Arrange
-    var mockLogger = new Mock<ILogger<ProductRepository>>();
-    var repository = new ProductRepository(mockLogger.Object);
-
-    // Act
-    var products = await repository.GetAllAsync();
-
-    // Assert
-    Assert.That(products, Is.Not.Null);
-    Assert.That(products.All(p => p.IsActive), Is.True);
-}
-```
-
-### **Service Testing with Mock Repository**
-```csharp
-[Test]
-public async Task CreateProductAsync_ShouldValidateBusinessRules()
-{
-    // Arrange
-    var mockRepository = new Mock<IProductRepository>();
-    var mockNotificationService = new Mock<INotificationService>();
-    var mockMapper = new Mock<IMapper>();
-    var mockLogger = new Mock<ILogger<ProductService>>();
-    
-    var service = new ProductService(
-        mockRepository.Object,
-        mockNotificationService.Object, 
-        mockMapper.Object,
-        mockLogger.Object);
-
-    var createDto = new CreateProductDto 
-    { 
-        Name = "Test Product", 
-        Price = 50.00m, 
-        CostPrice = 60.00m // Invalid: Price lower than cost
-    };
-
-    // Act & Assert
-    var ex = await Assert.ThrowsAsync<BusinessException>(
-        () => service.CreateProductAsync(createDto));
-    
-    Assert.That(ex.Message, Contains.Substring("10% higher than cost price"));
-}
-```
-
-### **Controller Testing with Mock Service**
-```csharp
-[Test]
-public async Task GetProducts_ShouldReturnOkWithProducts()
-{
-    // Arrange
-    var mockService = new Mock<IProductService>();
-    var mockLogger = new Mock<ILogger<ProductsController>>();
-    var controller = new ProductsController(mockService.Object, mockLogger.Object);
-
-    var expectedProducts = new List<ProductResponseDto> 
-    {
-        new ProductResponseDto { Id = 1, Name = "Test Product" }
-    };
-    
-    mockService.Setup(s => s.GetAllProductsAsync())
-               .ReturnsAsync(expectedProducts);
-
-    // Act
-    var result = await controller.GetProducts();
-
-    // Assert
-    Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-    var okResult = result.Result as OkObjectResult;
-    Assert.That(okResult.Value, Is.EqualTo(expectedProducts));
-}
-```
 
 ## 🎯 Key Takeaways
 
-1. **Repository Pattern**: Abstracts data access and makes testing easier
-2. **Service Layer**: Encapsulates business logic and coordinates operations  
-3. **Dependency Injection**: Enables loose coupling and flexible configuration
-4. **DTO Pattern**: Separates internal models from API contracts
-5. **Clean Architecture**: Each layer has single responsibility and clear boundaries
+1. **Global Exception Handling**: Use `IExceptionHandler` for centralized error handling
+2. **RFC 7807**: Follow standard problem details format for API errors
+3. **Custom Exceptions**: Create structured exception hierarchy with status codes
+4. **Handler Chain**: Register handlers from most specific to most general
+5. **Service Validation**: Move validation logic from controllers to services
+6. **Environment Awareness**: Show detailed errors in dev, sanitized in production
+7. **Clean Controllers**: Keep controllers thin and focused on HTTP concerns
 
 ## ➡️ What's Next?
 
-**Extend this architecture with:**
-- **Entity Framework Core** - Replace in-memory data with real database
-- **Unit of Work Pattern** - Manage transactions across multiple repositories
-- **CQRS Pattern** - Separate read and write operations
-- **MediatR** - Implement request/response pattern with handlers
-- **Background Services** - Add async processing for notifications
-
-## 🤔 Troubleshooting
-
-**Service registration issues?**
-- Verify all interfaces and implementations are registered in `Program.cs`
-- Check that service lifetimes are compatible (don't inject scoped into singleton)
-
-**AutoMapper configuration problems?**
-- Ensure `MappingProfile` is registered: `builder.Services.AddAutoMapper(typeof(MappingProfile))`
-- Verify all DTO-Entity mappings are configured properly
-
-**Business validation not working?**
-- Check that `BusinessException` is properly thrown from service layer
-- Ensure controller catches `BusinessException` and returns appropriate HTTP response
-
-**Repository returning null?**
-- Verify entity exists and `IsActive` flag is true (soft delete implementation)
-- Check that async methods are properly awaited
+**Extend this exception handling with:**
+- **Logging Integration** - Log exceptions to file, database, or cloud
+- **Error Tracking** - Integrate with Sentry, Application Insights, etc.
+- **Custom Error Pages** - Friendly error pages for web applications
+- **Rate Limiting Exceptions** - Handle 429 Too Many Requests
+- **Circuit Breaker** - Handle service unavailability gracefully
+- **Retry Policies** - Automatic retry with Polly
 
 ---
 
-**💡 Pro Tip**: Start with this clean architecture foundation and gradually add complexity as your application grows!
+**💡 Pro Tip**: Always validate in the service layer, not in controllers. This makes your validation reusable across different entry points and easier to test!

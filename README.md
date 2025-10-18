@@ -24,6 +24,8 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 | **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~30 min |
 | **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~20 min |
 | **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~30 min |
+| **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~40 min |
+| **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~45 min |
 
 ## 🎯 What You'll Learn
 
@@ -50,6 +52,16 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - ✅ Understanding Singleton, Scoped, and Transient services
 - ✅ Service registration and container configuration
 - ✅ Best practices for service design and implementation
+- ✅ Repository and Service layer patterns
+- ✅ Clean architecture with separation of concerns
+
+### **Exception Handling & Error Management**
+- ✅ Global exception handling with `IExceptionHandler`
+- ✅ RFC 7807 Problem Details standard for error responses
+- ✅ Custom exception hierarchy with HTTP status codes
+- ✅ Service layer validation and business rule enforcement
+- ✅ Environment-aware error details (Development vs Production)
+- ✅ Centralized error handling without try-catch blocks
 
 ### **Best Practices**
 - ✅ Separation of concerns with proper project structure
@@ -129,6 +141,23 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - When to use each service lifetime in production applications
 - Visual demonstration of instance creation and disposal
 
+### **Chapter 08: Repository & Service Pattern**
+- Implementing the Repository pattern for data access abstraction
+- Building a Service layer for business logic and validation
+- Clean architecture with proper separation of concerns
+- Dependency injection for loose coupling
+- DTO mapping with AutoMapper integration
+- Testing strategies with mocked dependencies
+
+### **Chapter 09: Global Exception Handling**
+- Implementing global exception handling with `IExceptionHandler` (.NET 8+)
+- Creating custom exception hierarchy with HTTP status codes
+- RFC 7807 Problem Details standard for consistent error responses
+- Exception handler chain (ValidationException → BusinessException → Global)
+- Moving validation from controllers to service layer
+- Environment-aware error details for security
+- Centralized error handling eliminates try-catch blocks in controllers
+
 ## 🔧 Project Structure
 
 ```
@@ -145,6 +174,10 @@ aspnet-core-9-web-api-tutorial/
 │   └── AutoMapperApi/
 ├── 07-dependency-injection/
 │   └── DependencyInjectionApi/
+├── 08-repository-and-services/
+│   └── RepositoryAndServicesApi/
+├── 09-exception-handling/
+│   └── ExceptionHandlingApi/
 └── README.md
 ```
 
@@ -181,7 +214,9 @@ aspnet-core-9-web-api-tutorial/
 3. Master **Chapter 04** for HTTP methods
 4. Learn **Chapter 05** for professional DTOs
 5. Practice **Chapter 06** for AutoMapper
-6. Complete with **Chapter 07** for Dependency Injection
+6. Understand **Chapter 07** for Dependency Injection
+7. Build with **Chapter 08** for Repository & Service patterns
+8. Complete with **Chapter 09** for Global Exception Handling
 
 **For experienced developers:**
 - Jump to any chapter based on your needs
@@ -207,15 +242,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## ➡️ What's Next?
 
-🎉 **Congratulations!** You've completed the core ASP.NET Core 9 Web API tutorial series!
+🎉 **Congratulations!** You've completed the ASP.NET Core 9 Web API tutorial series!
+
+**You've mastered:**
+- ✅ Building RESTful APIs with proper HTTP methods
+- ✅ DTOs and validation for clean API contracts
+- ✅ AutoMapper for object mapping
+- ✅ Dependency Injection and service lifetimes
+- ✅ Repository and Service layer patterns
+- ✅ Global exception handling with RFC 7807
 
 **Next learning paths:**
-- **Entity Framework Core** for database integration
-- **Authentication & Authorization** for secure APIs
-- **Repository Pattern** with Dependency Injection
-- **Unit Testing** with mocked dependencies
+- **Entity Framework Core** for real database integration
+- **Authentication & Authorization** with JWT/OAuth
+- **Unit Testing** with xUnit and Moq
+- **Integration Testing** with WebApplicationFactory
 - **Background Services** and hosted services
-- **API versioning** for evolving APIs
+- **API Versioning** for evolving APIs
+- **Caching** with IMemoryCache and Redis
+- **Logging** with Serilog and structured logging
 
 ## 💡 Dependency Injection Pro Tips
 
@@ -232,6 +277,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Visual demonstration** with console logging and GUID tracking
 - ✅ **Performance implications** of each service lifetime
 - ✅ **Common pitfalls** and how to avoid them
+
+## 💡 Exception Handling Pro Tips
+
+**Global Exception Handling provides:**
+- **Centralized error management** - All exceptions handled in one place
+- **RFC 7807 compliance** - Standard problem details format for consistency
+- **Clean controllers** - No try-catch blocks cluttering your code
+- **Environment-aware** - Detailed errors in dev, sanitized in production
+- **Type-safe exceptions** - Custom exception hierarchy with HTTP status codes
+- **Service layer validation** - Reusable validation across all entry points
+
+**Key benefits demonstrated in Chapter 09:**
+- ✅ **Zero try-catch** blocks in controllers
+- ✅ **Consistent error** responses across the entire API
+- ✅ **Structured exceptions** with proper HTTP status codes
+- ✅ **Validation in services** for better reusability and testing
+- ✅ **Production-ready** security with environment-aware error details
 
 ## 💡 AutoMapper Pro Tips
 

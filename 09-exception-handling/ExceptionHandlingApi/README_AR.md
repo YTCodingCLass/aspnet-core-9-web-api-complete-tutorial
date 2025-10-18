@@ -1,644 +1,547 @@
-# نمط Repository والخدمات مع حقن التبعية
+# معالجة الاستثناءات الشاملة مع RFC 7807 Problem Details
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)
-![Repository Pattern](https://img.shields.io/badge/Repository_Pattern-Architecture-FF6B35?style=flat-square)
-![Service Layer](https://img.shields.io/badge/Service_Layer-Business_Logic-2E8B57?style=flat-square)
+![Exception Handling](https://img.shields.io/badge/Exception_Handling-Middleware-FF6B35?style=flat-square)
+![RFC 7807](https://img.shields.io/badge/RFC_7807-Problem_Details-2E8B57?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد درس نمط Repository والخدمات](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد درس معالجة الاستثناءات الشاملة](#)** *(أضف رابط الفيديو هنا)*
 
 ## 🎯 أهداف التعلم
 
-في نهاية هذا الدرس، ستتقن:
-- ✅ **نمط Repository** - تجريد طبقة الوصول للبيانات عن منطق الأعمال
-- ✅ **معمارية طبقة الخدمات** - تنفيذ منطق الأعمال وتنسيق الخدمات
-- ✅ **حقن التبعية** - إدارة تبعيات المكونات ودورات حياتها
-- ✅ **نمط DTO** - فصل النماذج الداخلية عن عقود API
-- ✅ **تكامل AutoMapper** - تحويل تلقائي من كائن إلى كائن
-- ✅ **المعمارية النظيفة** - بناء APIs قابلة للصيانة والاختبار والتوسع
+بنهاية هذا الدرس، ستتقن:
+- ✅ **معالجة الاستثناءات الشاملة** - معالجة الأخطاء المركزية باستخدام `IExceptionHandler`
+- ✅ **RFC 7807 Problem Details** - استجابات خطأ موحدة ومعيارية
+- ✅ **تسلسل استثناءات مخصص** - أنواع استثناءات منظمة مع أكواد حالة HTTP
+- ✅ **سلسلة معالجات الاستثناءات** - معالجات محددة لأنواع مختلفة من الاستثناءات
+- ✅ **التحقق في طبقة الخدمة** - نقل منطق التحقق من المتحكمات إلى الخدمات
+- ✅ **معالجة أخطاء جاهزة للإنتاج** - تفاصيل خطأ تعتمد على البيئة
 
-## 🚀 ما سنبنيه
+## 🚀 ما نبنيه
 
-**API إدارة المنتجات** يوضح:
-- **نمط Repository** - تجريد نظيف للوصول للبيانات
-- **طبقة الخدمات** - منطق الأعمال والتحقق من صحة البيانات
-- **حقن التبعية** - ربط مناسب للمكونات
-- **تكامل AutoMapper** - تحويل تلقائي للـ DTOs
-- **خدمة الإشعارات** - الاهتمامات الشاملة
+**نظام معالجة استثناءات جاهز للإنتاج** يوضح:
+- **معالج استثناءات شامل** - يلتقط جميع الاستثناءات غير المعالجة
+- **معالج استثناءات الأعمال** - يتعامل مع استثناءات المجال الخاصة
+- **معالج استثناءات التحقق** - يتعامل مع أخطاء التحقق مع تفاصيل على مستوى الحقول
+- **أنواع استثناءات مخصصة** - `NotFoundException`، `BadRequestException`، `ValidationException`، إلخ.
+- **التحقق في طبقة الخدمة** - تحقق شامل في طبقة الخدمة
+- **التوافق مع RFC 7807** - تنسيق تفاصيل المشكلة القياسي
 
 ## 📁 هيكل المشروع
 
 ```
-RepositoryAndServicesApi/
+ExceptionHandlingApi/
 ├── Controllers/
-│   ├── ProductsController.cs        # متحكم API المنتجات
-│   └── ServiceLifetimeController.cs # عرض دورات حياة الخدمات
+│   ├── ProductsController.cs        # متحكمات نحيفة بدون معالجة استثناءات
+│   └── ServiceLifetimeController.cs # عرض توضيحي لعمر الخدمة
+├── Exceptions/                       # ⭐ أنواع الاستثناءات المخصصة
+│   ├── BaseException.cs             # الاستثناء الأساسي مع كود الحالة وكود الخطأ
+│   ├── NotFoundException.cs         # 404 غير موجود
+│   ├── BadRequestException.cs       # 400 طلب خاطئ
+│   ├── ValidationException.cs       # 422 كيان غير قابل للمعالجة (مع قاموس أخطاء)
+│   ├── UnauthorizedException.cs     # 401 غير مصرح
+│   ├── ForbiddenException.cs        # 403 محظور
+│   └── ConflictException.cs         # 409 تعارض
+├── Handlers/                         # ⭐ معالجات الاستثناءات
+│   ├── GlobalExceptionHandler.cs    # يلتقط جميع الاستثناءات غير المعالجة
+│   ├── BusinessExceptionHandler.cs  # يتعامل مع أحفاد BaseException
+│   └── ValidationExceptionHandler.cs # يتعامل مع أخطاء التحقق
 ├── Models/
-│   ├── Product.cs                   # نموذج كيان المنتج
-│   ├── Supplier.cs                  # نموذج كيان المورد
+│   ├── Product.cs                   # كيان المنتج
+│   ├── Supplier.cs                  # كيان المورد
 │   └── DTOs/
-│       ├── CreateProductDto.cs      # DTO طلب إنشاء منتج
-│       ├── UpdateProductDto.cs      # DTO طلب تحديث منتج
-│       ├── PatchProductDto.cs       # DTO طلب تعديل جزئي للمنتج
-│       └── ProductResponseDto.cs    # DTO استجابة المنتج مع حالة المخزون
+│       ├── CreateProductDto.cs      # طلب إنشاء المنتج
+│       ├── UpdateProductDto.cs      # طلب تحديث المنتج
+│       └── ProductResponseDto.cs    # استجابة المنتج مع حالة المخزون
 ├── Repositories/
-│   ├── IProductRepository.cs        # واجهة المستودع للوصول للبيانات
+│   ├── IProductRepository.cs        # واجهة المستودع
 │   └── ProductRepository.cs         # تنفيذ المستودع
 ├── Services/
-│   ├── IProductService.cs           # واجهة الخدمة لمنطق الأعمال
-│   ├── ProductService.cs            # تنفيذ الخدمة
+│   ├── IProductService.cs           # واجهة الخدمة
+│   ├── ProductService.cs            # الخدمة مع منطق التحقق ⭐
 │   ├── INotificationService.cs      # واجهة خدمة الإشعارات
-│   └── NotificationService.cs       # تنفيذ خدمة الإشعارات
+│   └── NotificationService.cs       # تنفيذ الإشعارات
 ├── Data/
-│   └── InMemoryDatabase.cs          # قاعدة بيانات في الذاكرة
-├── Services/
-│   └── BusinessException.cs         # استثناءات منطق الأعمال (نُقلت لمجلد Services)
+│   └── InMemoryDatabase.cs          # مخزن بيانات في الذاكرة
 ├── Mappings/
 │   └── MappingProfile.cs            # تكوين AutoMapper
-├── Program.cs                       # تسجيل حاوي DI وتكوين التطبيق
-└── RepositoryAndServicesApi.http    # طلبات HTTP للاختبار
+├── Program.cs                       # تسجيل معالجات الاستثناءات ⭐
+└── ExceptionHandlingApi.http        # طلبات HTTP للاختبار
 ```
 
-## 🏗️ نظرة عامة على المعمارية
+## 🏗️ بنية معالجة الاستثناءات
 
-تتبع المعمارية نهجاً طبقياً نظيفاً كما هو موضح في المخطط:
+### **تدفق معالجة الاستثناءات**
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  REST APIs                      │
-├─────────────────────────────────────────────────┤
-│              REST CONTROLLER                    │
-├─────────┬─────────────────────────────┬─────────┤
-│  DTOs   │       SERVICES              │ENTITIES │
-│         │         +                   │         │
-│         │       MAPPERS               │         │
-├─────────┴─────────────────────────────┴─────────┤
-│              JPA REPOSITORY                     │
-├─────────────────────────────────────────────────┤
-│                  Database                       │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│            طلب HTTP (المتحكم)                       │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│         طبقة الخدمة (منطق الأعمال)                 │
+│    • التحقق                                         │
+│    • قواعد الأعمال                                 │
+│    • معالجة البيانات                               │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  │ يرمي استثناء
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│      UseExceptionHandler() Middleware               │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│    سلسلة معالجات الاستثناءات (الترتيب مهم!)       │
+│    1. ValidationExceptionHandler ─┐                 │
+│    2. BusinessExceptionHandler ───┼─► تطابق؟        │
+│    3. GlobalExceptionHandler ─────┘                 │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│    استجابة JSON لتفاصيل المشكلة RFC 7807           │
+│    {                                                 │
+│      "type": "...",                                  │
+│      "title": "...",                                 │
+│      "status": 400,                                  │
+│      "detail": "...",                                │
+│      "errors": {...},                                │
+│      "errorCode": "...",                             │
+│      "timestamp": "...",                             │
+│      "traceId": "..."                                │
+│    }                                                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-### **مسؤوليات الطبقات:**
-- **REST Controller**: نقاط النهاية HTTP، معالجة الطلبات/الاستجابات، التحقق من الصحة
-- **Services**: منطق الأعمال، تحويل البيانات، الاهتمامات الشاملة
-- **Mappers**: تحويل الكائنات بين DTOs والكيانات باستخدام AutoMapper
-- **Repository**: تجريد الوصول للبيانات، عمليات CRUD
-- **DTOs**: كائنات نقل البيانات لعقود API
-- **Entities**: نماذج النطاق التي تمثل بيانات الأعمال
+## 🎨 تسلسل الاستثناءات المخصص
 
-### **1. تنفيذ نمط Repository**
+### **الاستثناء الأساسي**
 ```csharp
-// Repositories/IProductRepository.cs - تجريد الوصول للبيانات
-public interface IProductRepository
+// Exceptions/BaseException.cs
+public abstract class BaseException : Exception
 {
-    Task<IEnumerable<Product>> GetAllAsync();
-    Task<Product?> GetByIdAsync(int id);
-    Task<Product?> GetByIdWithSupplierAsync(int id);
-    Task<IEnumerable<Product>> GetByCategoryAsync(string category);
-    Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold = 10);
-    Task<Product> CreateAsync(Product product);
-    Task<Product?> UpdateAsync(Product product);
-    Task<bool> DeleteAsync(int id);
-    Task<bool> ExistsAsync(int id);
-}
+    public int StatusCode { get; }
+    public string ErrorCode { get; }
 
-// Repositories/ProductRepository.cs - تنفيذ الوصول للبيانات
-public class ProductRepository : IProductRepository
-{
-    private readonly ILogger<ProductRepository> _logger;
-
-    public ProductRepository(ILogger<ProductRepository> logger)
+    protected BaseException(string message, int statusCode, string errorCode)
+        : base(message)
     {
-        _logger = logger;
-    }
-
-    public async Task<IEnumerable<Product>> GetAllAsync()
-    {
-        _logger.LogInformation("🗃️ Repository: الحصول على جميع المنتجات");
-        
-        return InMemoryDatabase.Products
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.Name)
-            .ToList();
-    }
-    
-    // باقي طرق المستودع...
-}
-```
-
-### **2. تنفيذ طبقة الخدمات**
-```csharp
-// Services/IProductService.cs - واجهة منطق الأعمال
-public interface IProductService
-{
-    Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync();
-    Task<ProductResponseDto?> GetProductByIdAsync(int id);
-    Task<ProductResponseDto> CreateProductAsync(CreateProductDto createDto);
-    Task<ProductResponseDto?> UpdateProductAsync(int id, UpdateProductDto updateDto);
-    Task<bool> DeleteProductAsync(int id);
-}
-
-// Services/ProductService.cs - تنفيذ منطق الأعمال
-public class ProductService : IProductService
-{
-    private readonly IProductRepository _productRepository;
-    private readonly INotificationService _notificationService;
-    private readonly IMapper _mapper;
-    private readonly ILogger<ProductService> _logger;
-
-    public ProductService(
-        IProductRepository productRepository,
-        INotificationService notificationService,
-        IMapper mapper,
-        ILogger<ProductService> logger)
-    {
-        _productRepository = productRepository;
-        _notificationService = notificationService;
-        _mapper = mapper;
-        _logger = logger;
-    }
-
-    public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync()
-    {
-        _logger.LogInformation("⚙️ Service: الحصول على جميع المنتجات");
-        
-        var products = await _productRepository.GetAllAsync();
-        var productDtos = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
-        
-        // منطق الأعمال: حساب حالة المخزون
-        foreach (var dto in productDtos)
-        {
-            dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
-        }
-        
-        return productDtos;
-    }
-    
-    // طرق منطق الأعمال...
-    private string CalculateStockStatus(int stockQuantity)
-    {
-        return stockQuantity switch
-        {
-            0 => "نفد المخزون",
-            <= 5 => "منخفض جداً",
-            <= 10 => "منخفض",
-            <= 50 => "طبيعي",
-            _ => "متوفر جيداً"
-        };
+        StatusCode = statusCode;
+        ErrorCode = errorCode;
     }
 }
 ```
 
-### **3. تسجيل حقن التبعية**
+### **الاستثناءات المحددة**
+
+| الاستثناء | حالة HTTP | كود الخطأ | حالة الاستخدام |
+|-----------|------------|-----------|----------------|
+| `NotFoundException` | 404 | `NOT_FOUND` | المورد غير موجود |
+| `BadRequestException` | 400 | `BAD_REQUEST` | بيانات طلب غير صالحة أو انتهاك قاعدة عمل |
+| `ValidationException` | 422 | `VALIDATION_ERROR` | فشل التحقق من الإدخال (مع أخطاء على مستوى الحقول) |
+| `UnauthorizedException` | 401 | `UNAUTHORIZED` | المصادقة مطلوبة |
+| `ForbiddenException` | 403 | `FORBIDDEN` | أذونات غير كافية |
+| `ConflictException` | 409 | `CONFLICT` | تعارض المورد (مثل اسم مكرر) |
+
+### **أمثلة على الاستثناءات**
+
 ```csharp
-// Program.cs - تسجيل الخدمات
+// تحقق حقل واحد
+throw new ValidationException("Id", "يجب أن يكون معرف المنتج أكبر من صفر");
+
+// تحقق حقول متعددة
+var errors = new Dictionary<string, string[]>
+{
+    { "Name", ["اسم المنتج مطلوب"] },
+    { "Price", ["يجب أن يكون السعر أكبر من صفر"] }
+};
+throw new ValidationException(errors);
+
+// غير موجود
+throw new NotFoundException("Product", id);
+
+// انتهاك قاعدة عمل
+throw new BadRequestException("يجب أن يكون السعر أعلى بنسبة 10% على الأقل من سعر التكلفة");
+
+// تعارض
+throw new ConflictException($"المنتج باسم '{name}' موجود بالفعل");
+```
+
+## ⚙️ التحقق في طبقة الخدمة
+
+### **نقل التحقق من المتحكمات إلى الخدمات**
+
+**❌ قبل (التحقق القائم على المتحكم):**
+```csharp
+[HttpGet("{id}")]
+public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
+{
+    if (id <= 0)
+    {
+        throw new ValidationException("Id", "يجب أن يكون معرف المنتج أكبر من صفر");
+    }
+
+    var product = await productService.GetProductByIdAsync(id);
+    if (product == null)
+    {
+        throw new NotFoundException("Product", id);
+    }
+    return Ok(product);
+}
+```
+
+**✅ بعد (التحقق القائم على الخدمة):**
+```csharp
+// المتحكم - نحيف ونظيف
+[HttpGet("{id}")]
+public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
+{
+    var product = await productService.GetProductByIdAsync(id);
+    return Ok(product);
+}
+
+// الخدمة - تتعامل مع كل التحقق
+public async Task<ProductResponseDto> GetProductByIdAsync(int id)
+{
+    // التحقق
+    if (id <= 0)
+    {
+        throw new ValidationException("Id", "يجب أن يكون معرف المنتج أكبر من صفر");
+    }
+
+    var product = await productRepository.GetByIdWithSupplierAsync(id);
+    if (product == null)
+    {
+        throw new NotFoundException("Product", id);
+    }
+
+    var dto = mapper.Map<ProductResponseDto>(product);
+    dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
+    return dto;
+}
+```
+
+### **مثال تحقق شامل**
+
+```csharp
+private async Task ValidateProductCreationAsync(CreateProductDto createDto)
+{
+    var errors = new Dictionary<string, string[]>();
+
+    // التحقق: اسم المنتج
+    if (string.IsNullOrWhiteSpace(createDto.Name))
+    {
+        errors.Add("Name", ["اسم المنتج مطلوب"]);
+    }
+    else if (createDto.Name.Length < 3)
+    {
+        errors.Add("Name", ["يجب أن يكون اسم المنتج 3 أحرف على الأقل"]);
+    }
+    else if (createDto.Name.Length > 100)
+    {
+        errors.Add("Name", ["لا يمكن أن يتجاوز اسم المنتج 100 حرف"]);
+    }
+
+    // التحقق: السعر
+    if (createDto.Price <= 0)
+    {
+        errors.Add("Price", ["يجب أن يكون السعر أكبر من صفر"]);
+    }
+    else if (createDto.Price > 1000000)
+    {
+        errors.Add("Price", ["لا يمكن أن يتجاوز السعر 1,000,000"]);
+    }
+
+    // التحقق: كمية المخزون
+    if (createDto.StockQuantity < 0)
+    {
+        errors.Add("StockQuantity", ["لا يمكن أن تكون كمية المخزون سالبة"]);
+    }
+
+    // رمي ValidationException إذا كانت هناك أي أخطاء
+    if (errors.Any())
+    {
+        throw new ValidationException(errors);
+    }
+
+    // قاعدة عمل: التحقق من وجود اسم المنتج بالفعل
+    var existingProducts = await productRepository.GetAllAsync();
+    if (existingProducts.Any(p => p.Name.Equals(createDto.Name, StringComparison.OrdinalIgnoreCase)))
+    {
+        throw new ConflictException($"المنتج باسم '{createDto.Name}' موجود بالفعل");
+    }
+
+    // قاعدة عمل: التحقق من هامش الربح
+    if (createDto.Price <= createDto.CostPrice * 1.1m)
+    {
+        throw new BadRequestException("يجب أن يكون السعر أعلى بنسبة 10% على الأقل من سعر التكلفة");
+    }
+}
+```
+
+## 🔌 تكوين Program.cs
+
+```csharp
+// تسجيل خدمة Problem Details
+builder.Services.AddProblemDetails();
+
+// تسجيل معالجات الاستثناءات بترتيب التحديد
+// يجب تسجيل المعالجات الأكثر تحديداً أولاً
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// خدمات أخرى...
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+var app = builder.Build();
+
+// *** مهم: أضف معالج الاستثناءات في وقت مبكر من خط الأنابيب ***
+app.UseExceptionHandler();
+
+// وسيطة أخرى...
+app.UseSwagger();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
 ```
 
-## 🎮 تنفيذ الكونترولر
+## 📋 تنسيق استجابة RFC 7807 Problem Details
 
-### **كونترولر المنتجات بالمعمارية النظيفة**
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class ProductsController : ControllerBase
+### **استجابة خطأ التحقق (422)**
+```json
 {
-    private readonly IProductService _productService;
-    private readonly ILogger<ProductsController> _logger;
-
-    public ProductsController(IProductService productService, ILogger<ProductsController> logger)
-    {
-        _productService = productService;
-        _logger = logger;
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProducts()
-    {
-        _logger.LogInformation("🎮 Controller: الحصول على جميع المنتجات");
-        var products = await _productService.GetAllProductsAsync();
-        return Ok(products);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
-    {
-        _logger.LogInformation("🎮 Controller: الحصول على المنتج {ProductId}", id);
-        var product = await _productService.GetProductByIdAsync(id);
-        
-        if (product == null)
-        {
-            return NotFound($"المنتج برقم {id} غير موجود");
-        }
-        
-        return Ok(product);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<ProductResponseDto>> CreateProduct(CreateProductDto createProductDto)
-    {
-        _logger.LogInformation("🎮 Controller: إنشاء المنتج {ProductName}", createProductDto.Name);
-        
-        try
-        {
-            var newProduct = await _productService.CreateProductAsync(createProductDto);
-            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.Id }, newProduct);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
-
-    [HttpPut("{id}")]
-    public async Task<ActionResult<ProductResponseDto>> UpdateProduct(int id, UpdateProductDto updateProductDto)
-    {
-        _logger.LogInformation("🎮 Controller: تحديث المنتج {ProductId}", id);
-        
-        try
-        {
-            var updatedProduct = await _productService.UpdateProductAsync(id, updateProductDto);
-            if (updatedProduct == null)
-            {
-                return NotFound($"المنتج برقم {id} غير موجود");
-            }
-            return Ok(updatedProduct);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProduct(int id)
-    {
-        _logger.LogInformation("🎮 Controller: حذف المنتج {ProductId}", id);
-        
-        try
-        {
-            var success = await _productService.DeleteProductAsync(id);
-            if (!success)
-            {
-                return NotFound($"المنتج برقم {id} غير موجود");
-            }
-            return NoContent();
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { Error = ex.Message });
-        }
-    }
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+  "title": "حدث خطأ تحقق واحد أو أكثر.",
+  "status": 422,
+  "detail": "حدث خطأ تحقق واحد أو أكثر.",
+  "instance": "/api/products",
+  "errors": {
+    "Name": [
+      "اسم المنتج مطلوب"
+    ],
+    "Price": [
+      "يجب أن يكون السعر أكبر من صفر"
+    ],
+    "Category": [
+      "الفئة مطلوبة"
+    ]
+  },
+  "errorCode": "VALIDATION_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
 }
 ```
 
-## 🏛️ فوائد المعمارية
-
-### **🗃️ فوائد نمط Repository**
-- **تجريد الوصول للبيانات** - إخفاء تفاصيل تنفيذ تخزين البيانات
-- **قابلية الاختبار** - سهولة إنشاء Mock للوصول للبيانات في اختبارات الوحدة
-- **المرونة** - التبديل بين مصادر بيانات مختلفة دون تغيير منطق الأعمال
-- **المسؤولية الواحدة** - المستودعات تتعامل فقط مع عمليات الوصول للبيانات
-
-```csharp
-// سهولة التبديل من الذاكرة إلى قاعدة البيانات
-builder.Services.AddScoped<IProductRepository, ProductRepository>(); // في الذاكرة
-// builder.Services.AddScoped<IProductRepository, SqlProductRepository>(); // SQL Server
-// builder.Services.AddScoped<IProductRepository, MongoProductRepository>(); // MongoDB
-```
-
-### **⚙️ فوائد طبقة الخدمات**
-- **تغليف منطق الأعمال** - جميع قواعد الأعمال في مكان واحد
-- **الاهتمامات الشاملة** - التعامل مع الإشعارات، التحقق، التسجيل
-- **تحويل DTO** - التحويل بين نماذج النطاق و DTOs
-- **إدارة المعاملات** - تنسيق عمليات متعددة من المستودعات
-
-```csharp
-// الخدمة تنسق عمليات متعددة
-public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto createDto)
+### **استجابة خطأ غير موجود (404)**
+```json
 {
-    // 1. التحقق من قواعد الأعمال
-    await ValidateProductCreationAsync(createDto);
-    
-    // 2. تحويل DTO إلى نموذج النطاق
-    var product = _mapper.Map<Product>(createDto);
-    
-    // 3. الحفظ في المستودع
-    var createdProduct = await _productRepository.CreateAsync(product);
-    
-    // 4. إرسال الإشعارات
-    await _notificationService.SendProductCreatedNotificationAsync(responseDto);
-    
-    // 5. إرجاع DTO الاستجابة
-    return _mapper.Map<ProductResponseDto>(createdProduct);
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
+  "title": "غير موجود",
+  "status": 404,
+  "detail": "المنتج بمفتاح '999' غير موجود.",
+  "instance": "/api/products/999",
+  "errorCode": "NOT_FOUND",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
 }
 ```
 
-### **🔗 فوائد حقن التبعية**
-- **الربط المرن** - المكونات تعتمد على التجريدات، وليس التنفيذات
-- **عكس التحكم** - الإطار يدير دورة حياة الكائنات والتبعيات
-- **مرونة التكوين** - سهولة تغيير التنفيذات عبر التسجيل
-- **إدارة دورة الحياة المحدودة** - إدارة مناسبة للموارد والتخلص منها
-
-```csharp
-// فصل نظيف للاهتمامات عبر DI
-builder.Services.AddScoped<IProductRepository, ProductRepository>();    // الوصول للبيانات
-builder.Services.AddScoped<IProductService, ProductService>();          // منطق الأعمال
-builder.Services.AddScoped<INotificationService, NotificationService>(); // الاهتمامات الشاملة
-builder.Services.AddAutoMapper(typeof(MappingProfile));                 // تحويل الكائنات
+### **انتهاك قاعدة العمل (400)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+  "title": "طلب خاطئ",
+  "status": 400,
+  "detail": "يجب أن يكون السعر أعلى بنسبة 10% على الأقل من سعر التكلفة",
+  "instance": "/api/products",
+  "errorCode": "BAD_REQUEST",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
 ```
 
-## 🧪 اختبار API
-
-### **عمليات CRUD للمنتجات**
-
-#### **1. الحصول على جميع المنتجات**
-```http
-GET https://localhost:7xxx/api/products
+### **خطأ التعارض (409)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
+  "title": "تعارض",
+  "status": 409,
+  "detail": "المنتج باسم 'Laptop Pro' موجود بالفعل",
+  "instance": "/api/products",
+  "errorCode": "CONFLICT",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
 ```
 
-#### **2. الحصول على منتج بالمعرف**
-```http
-GET https://localhost:7xxx/api/products/1
+### **استثناء غير معالج - التطوير (500)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+  "title": "خطأ داخلي في الخادم",
+  "status": 500,
+  "detail": "لم يتم تعيين مرجع الكائن إلى مثيل كائن.",
+  "instance": "/api/products",
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00",
+  "exceptionType": "NullReferenceException",
+  "stackTrace": "at ExceptionHandlingApi.Services.ProductService.GetAllProductsAsync()..."
+}
 ```
 
-#### **3. إنشاء منتج جديد**
+### **استثناء غير معالج - الإنتاج (500)**
+```json
+{
+  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+  "title": "خطأ داخلي في الخادم",
+  "status": 500,
+  "detail": "حدث خطأ أثناء معالجة طلبك.",
+  "instance": "/api/products",
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "timestamp": "2025-10-18T10:30:45.123Z",
+  "traceId": "00-abc123-def456-00"
+}
+```
+
+## 🧪 اختبار معالجة الاستثناءات
+
+### **سيناريوهات الاختبار**
+
+1. **خطأ التحقق** - اسم منتج فارغ
 ```http
 POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
-  "name": "سماعات لاسلكية",
-  "price": 99.99,
-  "costPrice": 50.00,
-  "category": "إلكترونيات",
-  "stockQuantity": 25,
-  "supplierId": 1
+  "name": "",
+  "price": -10,
+  "category": ""
 }
 ```
 
-#### **4. تحديث منتج موجود**
+2. **غير موجود** - معرف منتج غير صالح
 ```http
-PUT https://localhost:7xxx/api/products/1
+GET https://localhost:7xxx/api/products/99999
+```
+
+3. **انتهاك قاعدة العمل** - هامش ربح منخفض
+```http
+POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
-  "name": "لابتوب محدث برو",
-  "price": 1299.99,
-  "costPrice": 800.00,
-  "category": "إلكترونيات",
-  "stockQuantity": 15,
-  "supplierId": 2
+  "name": "منتج تجريبي",
+  "price": 100,
+  "costPrice": 95,
+  "category": "اختبار"
 }
 ```
 
-#### **5. حذف منتج**
+4. **تعارض** - اسم منتج مكرر
 ```http
-DELETE https://localhost:7xxx/api/products/1
-```
+POST https://localhost:7xxx/api/products
+Content-Type: application/json
 
-### **نموذج استجابة API**
-```json
 {
-  "id": 1,
-  "name": "لابتوب برو",
-  "price": 1199.99,
-  "category": "إلكترونيات",
-  "stockQuantity": 10,
-  "stockStatus": "منخفض",
-  "supplier": {
-    "id": 1,
-    "name": "شركة الحلول التقنية",
-    "email": "contact@techsolutions.com"
-  },
-  "createdAt": "2025-01-15T10:30:00Z",
-  "updatedAt": "2025-01-15T14:45:00Z"
+  "name": "Laptop Pro",
+  "price": 1200,
+  "costPrice": 800,
+  "category": "إلكترونيات"
 }
 ```
 
-### **مخرجات التسجيل في وحدة التحكم**
+5. **إنشاء جماعي مع التحقق**
+```http
+POST https://localhost:7xxx/api/products/bulk-create
+Content-Type: application/json
+
+[
+  {
+    "name": "منتج 1",
+    "price": 100
+  },
+  {
+    "name": "منتج 1",
+    "price": 100
+  }
+]
 ```
-🗃️ Repository: الحصول على جميع المنتجات
-⚙️ Service: الحصول على جميع المنتجات
-⚙️ Service: تم استرداد 5 منتجات
-🎮 Controller: الحصول على جميع المنتجات
 
-🗃️ Repository: إنشاء منتج جديد: سماعات لاسلكية  
-⚙️ Service: إنشاء منتج جديد: سماعات لاسلكية
-📧 Notification: تم إنشاء المنتج - سماعات لاسلكية
-🎮 Controller: إنشاء المنتج سماعات لاسلكية
-```
+## 🎓 الفوائد الرئيسية
 
-## 🎓 أنماط المعمارية الرئيسية
+### **1. معالجة أخطاء مركزية**
+- ✅ جميع الاستثناءات معالجة في مكان واحد
+- ✅ لا توجد كتل try-catch في المتحكمات
+- ✅ تنسيق استجابة خطأ متسق
+- ✅ سهل الصيانة والتوسيع
 
-### **1. تنفيذ نمط Repository**
-- ✅ **تجريد الوصول للبيانات** - `IProductRepository` يخفي تفاصيل تخزين البيانات
-- ✅ **العمليات غير المتزامنة** - جميع طرق المستودع غير متزامنة
-- ✅ **علاقات الكيانات** - `GetByIdWithSupplierAsync` يحمل الكيانات المرتبطة
-- ✅ **دعم التصفية** - طرق للتصفية حسب الفئة والمخزون المنخفض
+### **2. التوافق مع RFC 7807**
+- ✅ تنسيق تفاصيل المشكلة القياسي
+- ✅ استجابات خطأ قابلة للقراءة آلياً
+- ✅ تكامل أفضل للعميل
+- ✅ أفضل ممارسات الصناعة
 
-### **2. تنفيذ طبقة الخدمات**
-- ✅ **تغليف منطق الأعمال** - حساب حالة المخزون، قواعد التحقق
-- ✅ **تحويل DTO** - التحويل التلقائي بين الكيانات و DTOs
-- ✅ **الاهتمامات الشاملة** - الإشعارات، التسجيل، معالجة الاستثناءات
-- ✅ **التحقق من الصحة** - تطبيق قواعد الأعمال (هوامش الربح، الأسماء المكررة)
+### **3. متحكمات نظيفة**
+- ✅ متحكمات نحيفة بدون منطق معالجة الاستثناءات
+- ✅ التركيز على مخاوف HTTP فقط
+- ✅ قابلية قراءة وصيانة أفضل
 
-### **3. فوائد حقن التبعية**
-- ✅ **الربط المرن** - سلسلة Controller → Service → Repository
-- ✅ **قابلية الاختبار** - سهولة إنشاء mock للتبعيات لاختبار الوحدة
-- ✅ **المسؤولية الواحدة** - كل مكون له غرض واضح واحد
-- ✅ **مرونة التكوين** - سهولة تبديل التنفيذات
+### **4. التحقق في طبقة الخدمة**
+- ✅ منطق تحقق قابل لإعادة الاستخدام
+- ✅ يعمل عبر نقاط دخول مختلفة (REST، gRPC، إلخ.)
+- ✅ فصل أفضل للمخاوف
+- ✅ أسهل للاختبار
 
-### **4. تدفق المعمارية النظيفة**
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   DTOs      │◄──►│ Controller  │────│   Service   │────│ Repository  │
-│             │    │             │    │             │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-                           │                   │                   │
-                           ▼                   ▼                   ▼
-                   معالجة HTTP         منطق الأعمال        الوصول للبيانات
-                   التحقق من الإدخال   تحويل البيانات      عمليات الاستعلام
-                   استجابات الأخطاء    الاهتمامات الشاملة  تحويل الكيانات
-                                     تنسيق الخدمات
-                                           │
-                                           ▼
-                                   ┌─────────────┐    ┌─────────────┐
-                                   │   Mappers   │◄──►│  Entities   │
-                                   │(AutoMapper) │    │ (Models)    │
-                                   └─────────────┘    └─────────────┘
-```
+### **5. الوعي بالبيئة**
+- ✅ معلومات خطأ مفصلة في التطوير
+- ✅ استجابات معقمة في الإنتاج
+- ✅ أفضل ممارسات الأمان
+
+### **6. تسلسل استثناءات منظم**
+- ✅ أنواع استثناءات واضحة لسيناريوهات مختلفة
+- ✅ أكواد حالة HTTP مدمجة
+- ✅ أكواد خطأ مخصصة لمعالجة العميل
+- ✅ معالجة استثناءات آمنة من حيث النوع
 
 ## 🔧 تشغيل المشروع
 
 ```bash
-cd RepositoryAndServicesApi
+cd ExceptionHandlingApi
 dotnet restore
 dotnet run
 ```
 
 **Swagger UI**: `https://localhost:7xxx/swagger`
 **Products API**: `https://localhost:7xxx/api/products`
-**عرض الخدمة**: `https://localhost:7xxx/api/servicelifetime/demo`
-
-## 🏗️ أفضل الممارسات في التنفيذ
-
-### **إرشادات نمط Repository**
-```csharp
-// ✅ افعل: اجعل المستودعات تركز على الوصول للبيانات
-public interface IProductRepository
-{
-    Task<IEnumerable<Product>> GetAllAsync();           // عمليات الاستعلام
-    Task<Product> CreateAsync(Product product);         // عمليات الأمر
-    Task<bool> ExistsAsync(int id);                    // عمليات المساعدة
-}
-
-// ❌ لا تفعل: لا تضع منطق الأعمال في المستودعات
-public interface IProductRepository
-{
-    Task<decimal> CalculateTotalValue();  // منطق الأعمال ينتمي للخدمة
-    Task SendLowStockAlert();            // الاهتمام الشامل ينتمي للخدمة
-}
-```
-
-### **إرشادات طبقة الخدمات**
-```csharp
-// ✅ افعل: غلف منطق الأعمال في الخدمات
-public class ProductService : IProductService
-{
-    // التحقق من منطق الأعمال
-    private async Task ValidateProductCreationAsync(CreateProductDto dto) { }
-    
-    // حسابات منطق الأعمال
-    private string CalculateStockStatus(int stock) { }
-    
-    // تنسيق عمليات متعددة
-    public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto dto) { }
-}
-
-// ❌ لا تفعل: لا تضع منطق الوصول للبيانات في الخدمات
-public class ProductService : IProductService
-{
-    public async Task<Product> GetProductAsync(int id)
-    {
-        // لا تكتب SQL أو كود الوصول للبيانات هنا
-        var sql = "SELECT * FROM Products WHERE Id = @id";
-        return await _connection.QueryAsync<Product>(sql, new { id });
-    }
-}
-```
-
-### **⚠️ الأنماط المضادة الشائعة**
-- **لا تضع** منطق الأعمال في الكونترولرز - استخدم الخدمات
-- **لا تصل** للمستودعات مباشرة من الكونترولرز - استخدم الخدمات
-- **لا ترجع** كيانات النطاق من الكونترولرز - استخدم DTOs
-- **لا تلتقط** الاستثناءات في المستودعات - دع الخدمات تتعامل معها
-
-## 📈 عرض تأثير الأداء
-
-### **التجربة: طلبات متعددة**
-1. **الطلب الأول** - جميع الخدمات يتم إنشاؤها:
-```
-🔴 تم إنشاء Singleton: [GUID-1]
-🟡 تم إنشاء Scoped: [GUID-2] 
-🟢 تم إنشاء Transient: [GUID-3]
-🟢 تم إنشاء Transient: [GUID-4]
-```
-
-2. **الطلب الثاني** - فقط Scoped و Transient يتم إنشاؤهما:
-```
-🟡 تم إنشاء Scoped: [GUID-5]  // جديد لهذا الطلب
-🟢 تم إنشاء Transient: [GUID-6]  // نسخ جديدة
-🟢 تم إنشاء Transient: [GUID-7]
-```
-
-3. **الطلب الثالث** - النمط يستمر:
-```
-🟡 تم إنشاء Scoped: [GUID-8]  // جديد لهذا الطلب
-🟢 تم إنشاء Transient: [GUID-9]  // دائماً جديد
-🟢 تم إنشاء Transient: [GUID-10]
-```
-
-### **تأثير الذاكرة والـ CPU**
-- **Singleton**: صفر تخصيص بعد الطلب الأول
-- **Scoped**: تخصيص واحد لكل طلب
-- **Transient**: تخصيصات متعددة لكل طلب
-
-## 🔍 تصحيح دورات حياة الخدمات
-
-### **المشاكل الشائعة والحلول**
-
-**1. مشكلة التبعية الأسيرة**
-```csharp
-// ❌ سيء: Singleton يحبس خدمة Scoped
-public class MySingleton
-{
-    private readonly DbContext _context; // Scoped!
-    // هذا سيسبب مشاكل!
-}
-
-// ✅ جيد: استخدم IServiceProvider أو نمط factory
-public class MySingleton
-{
-    private readonly IServiceProvider _serviceProvider;
-    
-    public void DoSomething()
-    {
-        using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<DbContext>();
-        // استخدم السياق بأمان
-    }
-}
-```
-
-**2. تصحيح إنشاء الخدمة**
-```csharp
-// أضف تسجيل للبنائيات
-public MyService(ILogger<MyService> logger)
-{
-    logger.LogInformation("تم إنشاء MyService: {InstanceId}", Guid.NewGuid());
-}
-```
 
 ## 🎯 النقاط الرئيسية
 
-1. **نمط Repository**: يجرد الوصول للبيانات ويسهل الاختبار
-2. **طبقة الخدمات**: تغلف منطق الأعمال وتنسق العمليات  
-3. **حقن التبعية**: يمكن الربط المرن والتكوين المرن
-4. **نمط DTO**: يفصل النماذج الداخلية عن عقود API
-5. **المعمارية النظيفة**: كل طبقة لها مسؤولية واحدة وحدود واضحة
+1. **معالجة الاستثناءات الشاملة**: استخدم `IExceptionHandler` لمعالجة الأخطاء المركزية
+2. **RFC 7807**: اتبع تنسيق تفاصيل المشكلة القياسي لأخطاء API
+3. **الاستثناءات المخصصة**: إنشاء تسلسل استثناءات منظم مع أكواد الحالة
+4. **سلسلة المعالج**: تسجيل المعالجات من الأكثر تحديداً إلى الأكثر عمومية
+5. **التحقق من الخدمة**: نقل منطق التحقق من المتحكمات إلى الخدمات
+6. **الوعي بالبيئة**: إظهار أخطاء مفصلة في التطوير، معقمة في الإنتاج
+7. **متحكمات نظيفة**: حافظ على المتحكمات نحيفة ومركزة على مخاوف HTTP
 
-## ➡️ ماذا بعد؟
+## ➡️ الخطوة التالية
 
-**توسيع هذه المعمارية مع:**
-- **Entity Framework Core** - استبدال البيانات في الذاكرة بقاعدة بيانات حقيقية
-- **نمط Unit of Work** - إدارة المعاملات عبر مستودعات متعددة
-- **نمط CQRS** - فصل عمليات القراءة والكتابة
-- **MediatR** - تنفيذ نمط الطلب/الاستجابة مع المعالجات
-- **الخدمات الخلفية** - إضافة معالجة غير متزامنة للإشعارات
-
-## 🤔 استكشاف الأخطاء وإصلاحها
-
-**مشاكل تسجيل الخدمات؟**
-- تحقق من تسجيل جميع الواجهات والتنفيذات في `Program.cs`
-- تأكد من توافق دورات حياة الخدمات (لا تحقن scoped في singleton)
-
-**مشاكل تكوين AutoMapper؟**
-- تأكد من تسجيل `MappingProfile`: `builder.Services.AddAutoMapper(typeof(MappingProfile))`
-- تحقق من تكوين جميع تحويلات DTO-Entity بشكل صحيح
-
-**التحقق من منطق الأعمال لا يعمل؟**
-- تحقق من أن `BusinessException` يتم رميها بشكل صحيح من طبقة الخدمة
-- تأكد من أن الكونترولر يلتقط `BusinessException` ويرجع استجابة HTTP مناسبة
-
-**المستودع يرجع null؟**
-- تحقق من وجود الكيان وأن علامة `IsActive` true (تنفيذ الحذف الناعم)
-- تأكد من أن الطرق غير المتزامنة يتم انتظارها بشكل صحيح
+**قم بتوسيع معالجة الاستثناءات هذه مع:**
+- **تكامل التسجيل** - تسجيل الاستثناءات في ملف أو قاعدة بيانات أو سحابة
+- **تتبع الأخطاء** - التكامل مع Sentry، Application Insights، إلخ.
+- **صفحات خطأ مخصصة** - صفحات خطأ ودية لتطبيقات الويب
+- **استثناءات تحديد المعدل** - معالجة 429 Too Many Requests
+- **قاطع الدائرة** - معالجة عدم توفر الخدمة بأمان
+- **سياسات إعادة المحاولة** - إعادة المحاولة التلقائية مع Polly
 
 ---
 
-**💡 نصيحة احترافية**: ابدأ بهذا الأساس للمعمارية النظيفة وأضف التعقيد تدريجياً مع نمو تطبيقك!
+**💡 نصيحة احترافية**: تحقق دائماً في طبقة الخدمة، وليس في المتحكمات. هذا يجعل التحقق قابلاً لإعادة الاستخدام عبر نقاط دخول مختلفة وأسهل للاختبار!
