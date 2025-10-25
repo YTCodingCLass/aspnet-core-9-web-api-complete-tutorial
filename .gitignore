@@ -348,3 +348,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 *.DS_Store
+
+# Claude Code configuration
+CLAUDE.md

@@ -20,7 +20,8 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 |---------|-------|--------------|----------|
 | **01** | [Introduction & Setup](./01-introduction-and-setup/) | Project creation, .NET 9 setup | ⏱️ ~15 min |
 | **02-03** | [First Controller & Swagger](./02-03-first-controller-and-swagger/) | Controllers, API documentation | ⏱️ ~25 min |
-| **04** | [HTTP Methods API](./04-http-methods-api/) | GET, POST, PUT, PATCH, DELETE | ⏱️ ~35 min |
+| **03** | [HTTP Methods API - Part 1](./03-http-methods-api/) | GET, POST basics | ⏱️ ~20 min |
+| **04** | [HTTP Methods API - Part 2](./04-http-methods-api/) | PUT, PATCH, DELETE, Status codes | ⏱️ ~35 min |
 | **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~30 min |
 | **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~20 min |
 | **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~30 min |
@@ -114,11 +115,17 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - XML comments for rich documentation
 - Testing with Swagger UI
 
-### **Chapter 04: HTTP Methods API**
-- Implementing all HTTP methods (GET, POST, PUT, PATCH, DELETE)
+### **Chapter 03: HTTP Methods API - Part 1**
+- Implementing GET and POST methods
 - Understanding RESTful principles
-- Proper status code usage
-- Error handling and logging
+- Basic CRUD operations
+- Introduction to status codes
+
+### **Chapter 04: HTTP Methods API - Part 2**
+- Implementing PUT, PATCH, and DELETE methods
+- Understanding method idempotency
+- Proper status code usage (200, 201, 204, 400, 404)
+- Error handling and logging patterns
 
 ### **Chapter 05: DTOs & Validation**
 - Data Transfer Objects for clean API design
@@ -166,6 +173,8 @@ aspnet-core-9-web-api-tutorial/
 │   └── AspNetCore9WebApiIntro/
 ├── 02-03-first-controller-and-swagger/
 │   └── FirstControllerAndSwagger/
+├── 03-http-methods-api/
+│   └── HttpMethodsApi/
 ├── 04-http-methods-api/
 │   └── HttpMethodsApi/
 ├── 05-dto-and-validations/
@@ -178,7 +187,8 @@ aspnet-core-9-web-api-tutorial/
 │   └── RepositoryAndServicesApi/
 ├── 09-exception-handling/
 │   └── ExceptionHandlingApi/
-└── README.md
+├── README.md
+└── README_AR.md
 ```
 
 ## 🛠️ Technologies Used
@@ -210,13 +220,14 @@ aspnet-core-9-web-api-tutorial/
 
 **Recommended order for beginners:**
 1. Start with **Chapter 01** for project setup
-2. Follow **Chapters 02-03** to understand controllers
-3. Master **Chapter 04** for HTTP methods
-4. Learn **Chapter 05** for professional DTOs
-5. Practice **Chapter 06** for AutoMapper
-6. Understand **Chapter 07** for Dependency Injection
-7. Build with **Chapter 08** for Repository & Service patterns
-8. Complete with **Chapter 09** for Global Exception Handling
+2. Follow **Chapters 02-03** to understand controllers and Swagger
+3. Learn **Chapter 03** for basic HTTP methods (GET, POST)
+4. Master **Chapter 04** for advanced HTTP methods (PUT, PATCH, DELETE)
+5. Understand **Chapter 05** for professional DTOs and validation
+6. Practice **Chapter 06** for AutoMapper integration
+7. Study **Chapter 07** for Dependency Injection concepts
+8. Build with **Chapter 08** for Repository & Service patterns
+9. Complete with **Chapter 09** for Global Exception Handling
 
 **For experienced developers:**
 - Jump to any chapter based on your needs
