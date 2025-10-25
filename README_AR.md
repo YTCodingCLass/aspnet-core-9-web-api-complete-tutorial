@@ -79,7 +79,7 @@
 ### تشغيل أي مشروع
 1. **استنساخ المستودع**
    ```bash
-   git clone https://github.com/yourusername/aspnet-core-9-web-api-complete-tutorial.git
+   git clone https://github.com/YTCodingCLass/aspnet-core-9-web-api-complete-tutorial.git
    cd aspnet-core-9-web-api-complete-tutorial
    ```
 

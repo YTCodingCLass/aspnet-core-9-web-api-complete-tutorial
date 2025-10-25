@@ -79,7 +79,7 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 ### Running Any Project
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/aspnet-core-9-web-api-complete-tutorial.git
+   git clone https://github.com/YTCodingCLass/aspnet-core-9-web-api-complete-tutorial.git
    cd aspnet-core-9-web-api-complete-tutorial
    ```
 
