@@ -4,7 +4,7 @@
 ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)
 
 ## 📺 YouTube Video
-**🔗 [Watch Chapter 02-03: First Controller & Swagger](#)** *(Add your video link here)*
+**🔗 [Watch Chapter 02-03: First Controller & Swagger](https://www.youtube.com/watch?v=kCVpIWl_nUk&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=9)**
 
 ## 🎯 Learning Objectives
 

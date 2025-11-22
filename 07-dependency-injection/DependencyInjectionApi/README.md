@@ -4,7 +4,7 @@
 ![Dependency Injection](https://img.shields.io/badge/Dependency_Injection-DI-FF6B35?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Chapter 07: Dependency Injection](#)** *(Add your video link here)*
+**🔗 [Watch Chapter 07: Dependency Injection](https://www.youtube.com/watch?v=8Q0cU9Gq8Co&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=3)**
 
 ## 🎯 Learning Objectives
 

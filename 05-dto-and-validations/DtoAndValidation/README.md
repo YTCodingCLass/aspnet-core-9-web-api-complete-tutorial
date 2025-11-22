@@ -4,7 +4,7 @@
 ![Validation](https://img.shields.io/badge/Validation-DataAnnotations-4CAF50?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Chapter 05: DTOs & Validation](#)** *(Add your video link here)*
+**🔗 [Watch Chapter 05: DTOs & Validation](https://www.youtube.com/watch?v=zwp3Qvxxzgc&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=5)**
 
 ## 🎯 Learning Objectives
 

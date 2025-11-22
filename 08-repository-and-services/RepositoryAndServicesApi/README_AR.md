@@ -5,7 +5,7 @@
 ![Service Layer](https://img.shields.io/badge/Service_Layer-Business_Logic-2E8B57?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد درس نمط Repository والخدمات](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد درس نمط Repository والخدمات](https://www.youtube.com/watch?v=ZoW5RnvgeSo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=2)**
 
 ## 🎯 أهداف التعلم
 

@@ -5,7 +5,7 @@
 ![RFC 7807](https://img.shields.io/badge/RFC_7807-Problem_Details-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Global Exception Handling Tutorial](#)** *(Add your video link here)*
+**🔗 [Watch Global Exception Handling Tutorial](https://www.youtube.com/watch?v=Efmvo90NuiA&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)**
 
 ## 🎯 Learning Objectives
 

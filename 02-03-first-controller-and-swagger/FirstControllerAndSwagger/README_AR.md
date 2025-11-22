@@ -4,7 +4,7 @@
 ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 02-03: أول كونترولر و Swagger](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد الفصل 02-03: أول كونترولر و Swagger](https://www.youtube.com/watch?v=kCVpIWl_nUk&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=9)**
 
 ## 🎯 أهداف التعلم
 

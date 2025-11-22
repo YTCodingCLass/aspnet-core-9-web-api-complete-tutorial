@@ -4,7 +4,7 @@
 ![REST](https://img.shields.io/badge/REST-API-009688?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 04: HTTP Methods API](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد الفصل 04: HTTP Methods API](https://www.youtube.com/watch?v=3pkXQIpd-Tk&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=6)**
 
 ## 🎯 أهداف التعلم
 

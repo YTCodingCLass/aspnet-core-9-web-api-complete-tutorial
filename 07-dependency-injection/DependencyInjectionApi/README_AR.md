@@ -4,7 +4,7 @@
 ![Dependency Injection](https://img.shields.io/badge/Dependency_Injection-DI-FF6B35?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 07: حقن التبعية](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد الفصل 07: حقن التبعية](https://www.youtube.com/watch?v=8Q0cU9Gq8Co&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=3)**
 
 ## 🎯 أهداف التعلم
 

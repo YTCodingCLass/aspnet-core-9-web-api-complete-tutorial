@@ -4,7 +4,7 @@
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-9.0-512BD4?style=flat-square&logo=dotnet)
 
 ## 📺 YouTube Video
-**🔗 [Watch Chapter 01: Introduction & Setup](#)** *(Add your video link here)*
+**🔗 [Watch Chapter 01: Introduction & Setup](https://www.youtube.com/watch?v=BEG49WICGEo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=9)**
 
 ## 🎯 Learning Objectives
 

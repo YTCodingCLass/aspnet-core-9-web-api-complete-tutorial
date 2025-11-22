@@ -4,7 +4,7 @@
 ![AutoMapper](https://img.shields.io/badge/AutoMapper-Mapping-FF6B35?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 06: تكامل AutoMapper](#)** *(أضف رابط الفيديو هنا)*
+**🔗 [شاهد الفصل 06: تكامل AutoMapper](https://www.youtube.com/watch?v=JlJGgamL5Iw&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=4)**
 
 ## 🎯 أهداف التعلم
 

@@ -1,31 +1,30 @@
-# Custom Middleware in ASP.NET Core
+# Custom Middleware in ASP.NET Core 9
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)
 ![Middleware](https://img.shields.io/badge/Custom-Middleware-FF6B35?style=flat-square)
 ![Pipeline](https://img.shields.io/badge/Request-Pipeline-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Custom Middleware Tutorial](#)** *(Add your video link here)*
+**🔗 [Watch Custom Middleware Tutorial](https://youtu.be/n1A_IjEf_hs)**
 
 ## 🎯 Learning Objectives
 
 By the end of this tutorial, you'll master:
-- ✅ **Custom Middleware** - Creating custom middleware components
-- ✅ **Request Pipeline** - Understanding the ASP.NET Core request pipeline
-- ✅ **Middleware Ordering** - Proper middleware registration and execution order
-- ✅ **Request/Response Manipulation** - Modifying HTTP requests and responses
-- ✅ **Short-Circuiting** - Terminating the pipeline early when needed
-- ✅ **Production-Ready Middleware** - Environment-aware middleware behavior
+- ✅ **Custom Middleware** - Creating custom middleware using `IMiddleware` interface
+- ✅ **Request Pipeline** - Understanding the ASP.NET Core middleware pipeline
+- ✅ **Middleware Ordering** - Critical importance of middleware registration order
+- ✅ **Request/Response Logging** - Reading and logging HTTP request/response data
+- ✅ **Performance Monitoring** - Measuring request processing time with stopwatch
+- ✅ **Response Headers** - Adding custom headers to HTTP responses
+- ✅ **Production-Ready Patterns** - Building reusable middleware components
 
 ## 🚀 What We Build
 
-A **Production-Ready Custom Middleware System** that demonstrates:
-- **Request Logging Middleware** - Logs incoming HTTP requests
-- **Response Timing Middleware** - Measures request processing time
-- **Custom Header Middleware** - Adds custom headers to responses
-- **API Key Validation Middleware** - Simple authentication middleware
-- **Exception Handling Middleware** - Centralized error handling
-- **Request/Response Body Reading** - Reading and logging request/response bodies
+A **Production-Ready Custom Middleware System** featuring three specialized middleware components:
+
+1. **RequestLoggingMiddleware** - Logs incoming request details and outgoing response status
+2. **ResponseTimingMiddleware** - Measures request processing time and adds `X-Response-Time` header
+3. **RequestResponseLoggingMiddleware** - Detailed request/response body logging for debugging
 
 ## 📁 Project Structure
 
@@ -34,10 +33,9 @@ CustomMiddlewareApi/
 ├── Controllers/
 │   └── ProductsController.cs        # API endpoints
 ├── Middleware/                       # ⭐ Custom middleware components
-│   ├── RequestLoggingMiddleware.cs  # Logs HTTP requests
-│   ├── ResponseTimingMiddleware.cs  # Measures response time
-│   ├── CustomHeaderMiddleware.cs    # Adds custom headers
-│   └── ApiKeyMiddleware.cs          # API key validation
+│   ├── RequestLoggingMiddleware.cs  # Logs HTTP requests and responses
+│   ├── ResponseTimingMiddleware.cs  # Measures and logs response time
+│   └── RequestResponseLoggingMiddleware.cs # Detailed body logging
 ├── Exceptions/                       # Custom exception types
 │   ├── BaseException.cs             # Base exception with status code
 │   ├── NotFoundException.cs         # 404 Not Found
@@ -52,16 +50,21 @@ CustomMiddlewareApi/
 │   └── ValidationExceptionHandler.cs # Handles validation errors
 ├── Models/
 │   ├── Product.cs                   # Product entity
+│   ├── Supplier.cs                  # Supplier entity
 │   └── DTOs/
-│       └── ProductDtos.cs           # Product DTOs
+│       ├── CreateProductDto.cs      # Product creation request
+│       ├── UpdateProductDto.cs      # Product update request
+│       └── ProductResponseDto.cs    # Product response with stock status
 ├── Repositories/
 │   ├── IProductRepository.cs        # Repository interface
 │   └── ProductRepository.cs         # Repository implementation
 ├── Services/
 │   ├── IProductService.cs           # Service interface
-│   └── ProductService.cs            # Service with validation logic
+│   ├── ProductService.cs            # Service with validation logic
+│   ├── INotificationService.cs      # Notification service interface
+│   └── NotificationService.cs       # Notification implementation
 ├── Data/
-│   └── InMemoryDatabase.cs          # In-memory data store
+│   └── ProductsData.cs              # In-memory data store
 ├── Mappings/
 │   └── MappingProfile.cs            # AutoMapper configuration
 ├── Program.cs                       # Middleware pipeline configuration ⭐
@@ -82,51 +85,50 @@ CustomMiddlewareApi/
 │      1. Exception Handler Middleware                │
 │         • Wraps entire pipeline                     │
 │         • Catches unhandled exceptions              │
+│         • Returns RFC 7807 Problem Details          │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│      2. Request Logging Middleware                  │
-│         • Logs request method, path, query          │
-│         • Records request timestamp                 │
+│      2. Request/Response Logging Middleware         │
+│         • Reads and logs request body               │
+│         • Enables request buffering                 │
+│         • Captures response body                    │
+│         • Logs complete request/response details    │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │      3. Response Timing Middleware                  │
-│         • Starts timer                              │
+│         • Starts stopwatch                          │
 │         • Adds X-Response-Time header               │
+│         • Logs processing duration                  │
+│         • Warns if request > 1000ms                 │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│      4. Custom Header Middleware                    │
-│         • Adds X-Custom-Header                      │
-│         • Adds X-Server-Info                        │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│      5. API Key Middleware (Optional)               │
-│         • Validates X-API-Key header                │
-│         • Returns 401 if invalid/missing            │
+│      4. Request Logging Middleware                  │
+│         • Logs request method, path                 │
+│         • Logs remote IP address                    │
+│         • Logs response status code                 │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │            Built-in Middleware                      │
-│         • Routing                                   │
-│         • CORS                                      │
-│         • Authentication                            │
+│         • Swagger (Development only)                │
+│         • HTTPS Redirection                         │
 │         • Authorization                             │
+│         • Endpoint Routing                          │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │              Controllers/Endpoints                  │
-│         • Process request                           │
+│         • ProductsController                        │
 │         • Call services                             │
-│         • Return response                           │
+│         • Return responses                          │
 └─────────────────┬───────────────────────────────────┘
                   │
                   ▼
@@ -136,327 +138,185 @@ CustomMiddlewareApi/
 ┌─────────────────────────────────────────────────────┐
 │              HTTP Response to Client                │
 │         • Status code                               │
-│         • Headers (including custom)                │
-│         • Body                                      │
+│         • Headers (including X-Response-Time)       │
+│         • JSON body                                 │
 └─────────────────────────────────────────────────────┘
 ```
 
-## 🎨 Custom Exception Hierarchy
+## 💻 Middleware Implementation Details
 
-### **Base Exception**
+### **1. RequestLoggingMiddleware** - Basic Request/Response Logging
+
 ```csharp
-// Exceptions/BaseException.cs
-public abstract class BaseException : Exception
+public class RequestLoggingMiddleware(ILogger<RequestLoggingMiddleware> logger) : IMiddleware
 {
-    public int StatusCode { get; }
-    public string ErrorCode { get; }
-
-    protected BaseException(string message, int statusCode, string errorCode)
-        : base(message)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        StatusCode = statusCode;
-        ErrorCode = errorCode;
+        // Before the request
+        logger.LogInformation(
+            "Incoming Request: {Method} {Path} from {RemoteIp}",
+            context.Request.Method,
+            context.Request.Path,
+            context.Connection.RemoteIpAddress);
+
+        // Call the next middleware in the pipeline
+        await next(context);
+
+        // After the response
+        logger.LogInformation(
+            "Outgoing Response: {StatusCode} for {Method} {Path}",
+            context.Response.StatusCode,
+            context.Request.Method,
+            context.Request.Path);
     }
 }
 ```
 
-### **Specific Exceptions**
+**Key Concepts:**
+- Implements `IMiddleware` interface for dependency injection support
+- Uses **primary constructor** (C# 12 feature) for cleaner code
+- Logs **before** calling `next()` for incoming request
+- Logs **after** calling `next()` for outgoing response
+- Captures **RemoteIpAddress** for tracking client requests
 
-| Exception | HTTP Status | Error Code | Use Case |
-|-----------|-------------|------------|----------|
-| `NotFoundException` | 404 | `NOT_FOUND` | Resource not found |
-| `BadRequestException` | 400 | `BAD_REQUEST` | Invalid request data or business rule violation |
-| `ValidationException` | 422 | `VALIDATION_ERROR` | Input validation failures (with field-level errors) |
-| `UnauthorizedException` | 401 | `UNAUTHORIZED` | Authentication required |
-| `ForbiddenException` | 403 | `FORBIDDEN` | Insufficient permissions |
-| `ConflictException` | 409 | `CONFLICT` | Resource conflict (e.g., duplicate name) |
+---
 
-### **Exception Examples**
+### **2. ResponseTimingMiddleware** - Performance Monitoring
 
 ```csharp
-// Single field validation
-throw new ValidationException("Id", "Product ID must be greater than zero");
-
-// Multiple field validation
-var errors = new Dictionary<string, string[]>
+public class ResponseTimingMiddleware(ILogger<ResponseTimingMiddleware> logger) : IMiddleware
 {
-    { "Name", new[] { "Product name is required" } },
-    { "Price", new[] { "Price must be greater than zero" } }
-};
-throw new ValidationException(errors);
-
-// Not found
-throw new NotFoundException("Product", id);
-
-// Business rule violation
-throw new BadRequestException("Price must be at least 10% higher than cost price");
-
-// Conflict
-throw new ConflictException($"Product with name '{name}' already exists");
-```
-
-## 🔧 Exception Handlers Implementation
-
-### **1. Validation Exception Handler** (Most Specific)
-```csharp
-// Handlers/ValidationExceptionHandler.cs
-public class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger)
-    : IExceptionHandler
-{
-    public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
-        Exception exception,
-        CancellationToken cancellationToken)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        if (exception is not ValidationException validationException)
+        // Start the stopwatch
+        var stopwatch = Stopwatch.StartNew();
+
+        // Hook into OnStarting to add the header before the response is sent
+        context.Response.OnStarting(() =>
         {
-            return false; // Let next handler try
+            stopwatch.Stop();
+            var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+            context.Response.Headers.Append("X-Response-Time", $"{elapsedMilliseconds}ms");
+            return Task.CompletedTask;
+        });
+
+        // Execute the next middleware
+        await next(context);
+
+        // Stop the stopwatch (if not already stopped)
+        stopwatch.Stop();
+
+        // Log the elapsed time
+        var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+
+        logger.LogInformation(
+            "Request {Method} {Path} completed in {ElapsedMilliseconds}ms with status {StatusCode}",
+            context.Request.Method,
+            context.Request.Path,
+            elapsedMilliseconds,
+            context.Response.StatusCode);
+
+        // Warn if request took too long
+        if (elapsedMilliseconds > 1000)
+        {
+            logger.LogWarning(
+                "SLOW REQUEST: {Method} {Path} took {ElapsedMilliseconds}ms",
+                context.Request.Method,
+                context.Request.Path,
+                elapsedMilliseconds);
         }
-
-        logger.LogWarning("Validation error: {ErrorCount} errors",
-            validationException.Errors.Count);
-
-        var problemDetails = new ValidationProblemDetails(validationException.Errors)
-        {
-            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-            Title = "One or more validation errors occurred.",
-            Status = StatusCodes.Status422UnprocessableEntity,
-            Detail = validationException.Message,
-            Instance = httpContext.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = "VALIDATION_ERROR",
-                ["timestamp"] = DateTimeOffset.UtcNow,
-                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
-            }
-        };
-
-        httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-        httpContext.Response.ContentType = "application/problem+json";
-
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-        return true;
     }
 }
 ```
 
-### **2. Business Exception Handler** (Specific)
-```csharp
-// Handlers/BusinessExceptionHandler.cs
-public class BusinessExceptionHandler(ILogger<BusinessExceptionHandler> logger)
-    : IExceptionHandler
-{
-    public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
-        Exception exception,
-        CancellationToken cancellationToken)
-    {
-        if (exception is not BaseException baseException ||
-            exception is ValidationException)
-        {
-            return false; // ValidationException handled by specific handler
-        }
+**Key Concepts:**
+- Uses `Stopwatch` for accurate time measurement
+- **OnStarting callback** - Ensures header is added before response starts
+- Adds **X-Response-Time** custom header to every response
+- Logs performance metrics with structured logging
+- **Slow request detection** - Warns if response time > 1000ms
+- Ideal for identifying performance bottlenecks
 
-        logger.LogWarning("Business exception: {ErrorCode} - {Message}",
-            baseException.ErrorCode, baseException.Message);
+---
 
-        var problemDetails = new ProblemDetails
-        {
-            Type = GetProblemTypeUrl(baseException.StatusCode),
-            Title = GetStatusTitle(baseException.StatusCode),
-            Status = baseException.StatusCode,
-            Detail = baseException.Message,
-            Instance = httpContext.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = baseException.ErrorCode,
-                ["timestamp"] = DateTimeOffset.UtcNow,
-                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
-            }
-        };
-
-        httpContext.Response.StatusCode = baseException.StatusCode;
-        httpContext.Response.ContentType = "application/problem+json";
-
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-        return true;
-    }
-}
-```
-
-### **3. Global Exception Handler** (Catch-All)
-```csharp
-// Handlers/GlobalExceptionHandler.cs
-public class GlobalExceptionHandler(
-    ILogger<GlobalExceptionHandler> logger,
-    IHostEnvironment environment)
-    : IExceptionHandler
-{
-    public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
-        Exception exception,
-        CancellationToken cancellationToken)
-    {
-        logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
-
-        var problemDetails = new ProblemDetails
-        {
-            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
-            Title = "Internal Server Error",
-            Status = StatusCodes.Status500InternalServerError,
-            Detail = environment.IsDevelopment()
-                ? exception.Message
-                : "An error occurred while processing your request.",
-            Instance = httpContext.Request.Path,
-            Extensions =
-            {
-                ["errorCode"] = "INTERNAL_SERVER_ERROR",
-                ["timestamp"] = DateTimeOffset.UtcNow,
-                ["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier
-            }
-        };
-
-        // In development, add debug information
-        if (environment.IsDevelopment())
-        {
-            problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
-            problemDetails.Extensions["stackTrace"] = exception.StackTrace;
-
-            if (exception.InnerException != null)
-            {
-                problemDetails.Extensions["innerException"] = new
-                {
-                    message = exception.InnerException.Message,
-                    type = exception.InnerException.GetType().Name
-                };
-            }
-        }
-
-        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        httpContext.Response.ContentType = "application/problem+json";
-
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-        return true;
-    }
-}
-```
-
-## ⚙️ Service Layer Validation
-
-### **Moving Validation from Controllers to Services**
-
-**❌ Before (Controller-based validation):**
-```csharp
-[HttpGet("{id}")]
-public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
-{
-    if (id <= 0)
-    {
-        throw new ValidationException("Id", "Product ID must be greater than zero");
-    }
-
-    var product = await productService.GetProductByIdAsync(id);
-    if (product == null)
-    {
-        throw new NotFoundException("Product", id);
-    }
-    return Ok(product);
-}
-```
-
-**✅ After (Service-based validation):**
-```csharp
-// Controller - Thin and clean
-[HttpGet("{id}")]
-public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
-{
-    var product = await productService.GetProductByIdAsync(id);
-    return Ok(product);
-}
-
-// Service - Handles all validation
-public async Task<ProductResponseDto> GetProductByIdAsync(int id)
-{
-    // Validation
-    if (id <= 0)
-    {
-        throw new ValidationException("Id", "Product ID must be greater than zero");
-    }
-
-    var product = await productRepository.GetByIdWithSupplierAsync(id);
-    if (product == null)
-    {
-        throw new NotFoundException("Product", id);
-    }
-
-    var dto = mapper.Map<ProductResponseDto>(product);
-    dto.StockStatus = CalculateStockStatus(dto.StockQuantity);
-    return dto;
-}
-```
-
-### **Comprehensive Validation Example**
+### **3. RequestResponseLoggingMiddleware** - Detailed Body Logging
 
 ```csharp
-private async Task ValidateProductCreationAsync(CreateProductDto createDto)
+public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMiddleware> logger) : IMiddleware
 {
-    var errors = new Dictionary<string, string[]>();
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        // Log Request
+        await LogRequest(context);
 
-    // Validation: Product name
-    if (string.IsNullOrWhiteSpace(createDto.Name))
-    {
-        errors.Add("Name", ["Product name is required"]);
-    }
-    else if (createDto.Name.Length < 3)
-    {
-        errors.Add("Name", ["Product name must be at least 3 characters long"]);
-    }
-    else if (createDto.Name.Length > 100)
-    {
-        errors.Add("Name", ["Product name cannot exceed 100 characters"]);
-    }
+        // Copy the original response stream
+        var originalBodyStream = context.Response.Body;
 
-    // Validation: Price
-    if (createDto.Price <= 0)
-    {
-        errors.Add("Price", ["Price must be greater than zero"]);
-    }
-    else if (createDto.Price > 1000000)
-    {
-        errors.Add("Price", ["Price cannot exceed 1,000,000"]);
+        using var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
+
+        // Execute the next middleware
+        await next(context);
+
+        // Log Response
+        await LogResponse(context);
+
+        // Copy the contents of the new response stream to the original stream
+        await responseBody.CopyToAsync(originalBodyStream);
     }
 
-    // Validation: Stock Quantity
-    if (createDto.StockQuantity < 0)
+    private async Task LogRequest(HttpContext context)
     {
-        errors.Add("StockQuantity", ["Stock quantity cannot be negative"]);
+        context.Request.EnableBuffering();
+
+        var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
+        context.Request.Body.Position = 0;
+
+        logger.LogInformation(
+            "HTTP Request Information:\n" +
+            "Method: {Method}\n" +
+            "Path: {Path}\n" +
+            "QueryString: {QueryString}\n" +
+            "Body: {Body}",
+            context.Request.Method,
+            context.Request.Path,
+            context.Request.QueryString,
+            body);
     }
 
-    // Throw ValidationException if there are any errors
-    if (errors.Any())
+    private async Task LogResponse(HttpContext context)
     {
-        throw new ValidationException(errors);
-    }
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
 
-    // Business rule: Check if product name already exists
-    var existingProducts = await productRepository.GetAllAsync();
-    if (existingProducts.Any(p => p.Name.Equals(createDto.Name, StringComparison.OrdinalIgnoreCase)))
-    {
-        throw new ConflictException($"Product with name '{createDto.Name}' already exists");
-    }
-
-    // Business rule: Validate profit margin
-    if (createDto.Price <= createDto.CostPrice * 1.1m)
-    {
-        throw new BadRequestException("Price must be at least 10% higher than cost price");
+        logger.LogInformation(
+            "HTTP Response Information:\n" +
+            "StatusCode: {StatusCode}\n" +
+            "Body: {Body}",
+            context.Response.StatusCode,
+            body);
     }
 }
 ```
+
+**Key Concepts:**
+- **EnableBuffering()** - Allows reading request body multiple times
+- **Stream replacement** - Captures response body without breaking the response
+- Logs complete request body (method, path, query, body)
+- Logs complete response body (status code, body)
+- **Important**: Reset stream position after reading to avoid data loss
+- **Use cautiously** - Can be verbose in production, enable only for debugging
+
+---
 
 ## 🔌 Program.cs Configuration
 
 ```csharp
-// Register Problem Details service
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
 // Register exception handlers
@@ -464,237 +324,179 @@ builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-// Register services
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Register services for dependency injection
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+
+// ⭐ Register middleware services (required for IMiddleware interface)
+builder.Services.AddScoped<RequestResponseLoggingMiddleware>();
+builder.Services.AddScoped<ResponseTimingMiddleware>();
+builder.Services.AddScoped<RequestLoggingMiddleware>();
 
 var app = builder.Build();
 
-// *** MIDDLEWARE PIPELINE - ORDER MATTERS! ***
+// *** MIDDLEWARE ORDER MATTERS! ***
 
-// 1. Exception handler wraps everything
+// 1. Exception Handler - wraps the entire pipeline to catch all exceptions
 app.UseExceptionHandler();
 
-// 2. Custom middleware components
-app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseMiddleware<ResponseTimingMiddleware>();
-app.UseMiddleware<CustomHeaderMiddleware>();
-app.UseMiddleware<ApiKeyMiddleware>(); // Optional authentication
+// 2. Custom Middleware - Request/Response Logging (optional - can be verbose)
+// Uncomment to enable detailed request/response body logging
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
-// 3. Built-in middleware
-app.UseSwagger();
+// 3. Custom Middleware - Response Timing
+// Measures how long each request takes and adds X-Response-Time header
+app.UseMiddleware<ResponseTimingMiddleware>();
+
+// 4. Custom Middleware - Request Logging
+// Logs basic request information (method, path, IP)
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+// 5. Swagger (Development only)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// 6. HTTPS Redirection
 app.UseHttpsRedirection();
+
+// 7. Authorization
 app.UseAuthorization();
 
-// 4. Endpoint routing
+// 8. Endpoint Routing - maps controllers
 app.MapControllers();
 
 app.Run();
 ```
 
-## 📋 RFC 7807 Problem Details Response Format
+**Critical Points:**
+- **IMiddleware registration**: Must register middleware classes in DI container
+- **Middleware order**: Exception handler first, then custom middleware, then built-in
+- **Scoped lifetime**: Middleware using `IMiddleware` should be scoped
+- **Environment-aware**: Swagger only in Development
 
-### **Validation Error Response (422)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-  "title": "One or more validation errors occurred.",
-  "status": 422,
-  "detail": "One or more validation errors occurred.",
-  "instance": "/api/products",
-  "errors": {
-    "Name": [
-      "Product name is required"
-    ],
-    "Price": [
-      "Price must be greater than zero"
-    ],
-    "Category": [
-      "Category is required"
-    ]
-  },
-  "errorCode": "VALIDATION_ERROR",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00"
-}
-```
+---
 
-### **Not Found Error Response (404)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
-  "title": "Not Found",
-  "status": 404,
-  "detail": "Product with key '999' was not found.",
-  "instance": "/api/products/999",
-  "errorCode": "NOT_FOUND",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00"
-}
-```
+## 🧪 Testing the Middleware
 
-### **Business Rule Violation (400)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-  "title": "Bad Request",
-  "status": 400,
-  "detail": "Price must be at least 10% higher than cost price",
-  "instance": "/api/products",
-  "errorCode": "BAD_REQUEST",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00"
-}
-```
-
-### **Conflict Error (409)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
-  "title": "Conflict",
-  "status": 409,
-  "detail": "Product with name 'Laptop Pro' already exists",
-  "instance": "/api/products",
-  "errorCode": "CONFLICT",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00"
-}
-```
-
-### **Unhandled Exception - Development (500)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
-  "title": "Internal Server Error",
-  "status": 500,
-  "detail": "Object reference not set to an instance of an object.",
-  "instance": "/api/products",
-  "errorCode": "INTERNAL_SERVER_ERROR",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00",
-  "exceptionType": "NullReferenceException",
-  "stackTrace": "at ExceptionHandlingApi.Services.ProductService.GetAllProductsAsync()..."
-}
-```
-
-### **Unhandled Exception - Production (500)**
-```json
-{
-  "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
-  "title": "Internal Server Error",
-  "status": 500,
-  "detail": "An error occurred while processing your request.",
-  "instance": "/api/products",
-  "errorCode": "INTERNAL_SERVER_ERROR",
-  "timestamp": "2025-10-18T10:30:45.123Z",
-  "traceId": "00-abc123-def456-00"
-}
-```
-
-## 🧪 Testing the Exception Handling
-
-### **Test Scenarios**
-
-1. **Validation Error** - Empty product name
+### **1. Test Response Timing**
 ```http
-POST https://localhost:7xxx/api/products
-Content-Type: application/json
-
-{
-  "name": "",
-  "price": -10,
-  "category": ""
-}
+GET https://localhost:7xxx/api/products
 ```
 
-2. **Not Found** - Invalid product ID
-```http
-GET https://localhost:7xxx/api/products/99999
+**Check response headers** for:
+```
+X-Response-Time: 25ms
 ```
 
-3. **Business Rule Violation** - Low profit margin
+**Check logs** for:
+```
+Request GET /api/products completed in 25ms with status 200
+```
+
+---
+
+### **2. Test Request Logging**
 ```http
 POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
   "name": "Test Product",
-  "price": 100,
-  "costPrice": 95,
-  "category": "Test"
+  "price": 99.99,
+  "stockQuantity": 10
 }
 ```
 
-4. **Conflict** - Duplicate product name
+**Check logs** for:
+```
+Incoming Request: POST /api/products from ::1
+Outgoing Response: 201 for POST /api/products
+```
+
+---
+
+### **3. Test Detailed Body Logging**
+
+Enable `RequestResponseLoggingMiddleware` in Program.cs and test:
+
 ```http
 POST https://localhost:7xxx/api/products
 Content-Type: application/json
 
 {
   "name": "Laptop Pro",
-  "price": 1200,
-  "costPrice": 800,
-  "category": "Electronics"
+  "price": 1299.99,
+  "stockQuantity": 5
 }
 ```
 
-5. **Bulk Create with Validation**
-```http
-POST https://localhost:7xxx/api/products/bulk-create
-Content-Type: application/json
-
-[
-  {
-    "name": "Product 1",
-    "price": 100
-  },
-  {
-    "name": "Product 1",
-    "price": 100
-  }
-]
+**Check logs** for complete request/response bodies:
 ```
+HTTP Request Information:
+Method: POST
+Path: /api/products
+QueryString:
+Body: {"name":"Laptop Pro","price":1299.99,"stockQuantity":5}
+
+HTTP Response Information:
+StatusCode: 201
+Body: {"id":4,"name":"Laptop Pro","price":1299.99,...}
+```
+
+---
+
+### **4. Test Slow Request Warning**
+
+Trigger a slow endpoint and check for warning:
+
+```
+SLOW REQUEST: GET /api/products/slow-endpoint took 1523ms
+```
+
+---
 
 ## 🎓 Key Benefits
 
-### **1. Centralized Error Handling**
-- ✅ All exceptions handled in one place
-- ✅ No try-catch blocks in controllers
-- ✅ Consistent error response format
-- ✅ Easy to maintain and extend
+### **1. Separation of Concerns**
+- ✅ Middleware handles cross-cutting concerns (logging, timing, headers)
+- ✅ Controllers focus on business logic
+- ✅ Clean, maintainable codebase
 
-### **2. RFC 7807 Compliance**
-- ✅ Standard problem details format
-- ✅ Machine-readable error responses
-- ✅ Better client integration
-- ✅ Industry best practices
+### **2. Reusability**
+- ✅ Middleware components work across all endpoints
+- ✅ No code duplication in controllers
+- ✅ Easy to enable/disable features
 
-### **3. Clean Controllers**
-- ✅ Thin controllers with no exception handling logic
-- ✅ Focus on HTTP concerns only
-- ✅ Better readability and maintainability
+### **3. Performance Monitoring**
+- ✅ Automatic response time tracking
+- ✅ Slow request detection
+- ✅ Performance bottleneck identification
 
-### **4. Service Layer Validation**
-- ✅ Reusable validation logic
-- ✅ Works across different entry points (REST, gRPC, etc.)
-- ✅ Better separation of concerns
-- ✅ Easier to test
+### **4. Debugging**
+- ✅ Complete request/response logging
+- ✅ IP address tracking
+- ✅ Structured logging with correlation
 
-### **5. Environment-Aware**
-- ✅ Detailed error info in Development
-- ✅ Sanitized responses in Production
-- ✅ Security best practices
+### **5. IMiddleware Interface Benefits**
+- ✅ Dependency injection support
+- ✅ Scoped services (logger, DbContext, etc.)
+- ✅ Cleaner, testable code
+- ✅ Lifetime management by DI container
 
-### **6. Structured Exception Hierarchy**
-- ✅ Clear exception types for different scenarios
-- ✅ HTTP status codes built-in
-- ✅ Custom error codes for client handling
-- ✅ Type-safe exception handling
+---
 
 ## 🔧 Running the Project
 
 ```bash
-cd CustomMiddlewareApi
+cd 10-custom-middleware/CustomMiddlewareApi
 dotnet restore
 dotnet run
 ```
@@ -702,26 +504,32 @@ dotnet run
 **Swagger UI**: `https://localhost:7xxx/swagger`
 **Products API**: `https://localhost:7xxx/api/products`
 
+---
+
 ## 🎯 Key Takeaways
 
-1. **Custom Middleware**: Create reusable components for cross-cutting concerns
-2. **Pipeline Order**: Middleware registration order is critical - think carefully about the sequence
-3. **Request Delegate**: Use `next()` to pass control to the next middleware
-4. **Short-Circuiting**: Return early without calling `next()` when needed
-5. **Request/Response Access**: Full access to HttpContext for reading/modifying requests and responses
-6. **Exception Handling**: Place exception middleware early to catch errors from downstream middleware
-7. **Environment Awareness**: Enable/disable middleware based on environment
+1. **IMiddleware Interface**: Preferred approach for middleware with DI support
+2. **Primary Constructors**: Use C# 12 feature for cleaner constructor injection
+3. **Middleware Order**: Critical - Exception handler first, routing last
+4. **Performance Monitoring**: Use Stopwatch and OnStarting callback for headers
+5. **Request Buffering**: EnableBuffering() allows reading request body multiple times
+6. **Stream Management**: Replace response stream to capture body without breaking response
+7. **Environment Awareness**: Enable verbose logging only in Development
+8. **Structured Logging**: Use named placeholders for better log searching
+
+---
 
 ## ➡️ What's Next?
 
 **Extend this middleware system with:**
+- **Authentication Middleware** - API key or JWT validation
 - **Rate Limiting Middleware** - Limit requests per IP/user
 - **Caching Middleware** - Response caching for improved performance
 - **Compression Middleware** - Compress responses to reduce bandwidth
 - **CORS Middleware** - Handle cross-origin requests
-- **Request/Response Logging** - Log full request/response bodies for debugging
-- **Performance Monitoring** - Track slow endpoints and bottlenecks
+- **Short-Circuit Middleware** - Return early based on conditions
+- **Conditional Middleware** - Enable middleware based on environment/configuration
 
 ---
 
-**💡 Pro Tip**: Middleware order matters! Exception handlers should be first, followed by logging, then authentication/authorization, and routing comes last before endpoints!
+**💡 Pro Tip**: Middleware order is critical! Always think about the request/response flow. Exception handlers wrap everything, logging happens early, and routing comes last before endpoints!

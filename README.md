@@ -12,21 +12,22 @@
 
 This repository contains all the source code for our comprehensive ASP.NET Core 9 Web API tutorial series. Each folder represents a complete chapter with working code examples.
 
-**🔗 [Watch the Full Playlist on YouTube](#)** *(Add your playlist link here)*
+**🔗 [Watch the Full Playlist on YouTube](https://www.youtube.com/playlist?list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA)**
 
 ## 📚 Tutorial Structure
 
 | Chapter | Topic | Key Concepts | Duration |
 |---------|-------|--------------|----------|
-| **01** | [Introduction & Setup](./01-introduction-and-setup/) | Project creation, .NET 9 setup | ⏱️ ~15 min |
-| **02-03** | [First Controller & Swagger](./02-03-first-controller-and-swagger/) | Controllers, API documentation | ⏱️ ~25 min |
-| **03** | [HTTP Methods API - Part 1](./03-http-methods-api/) | GET, POST basics | ⏱️ ~20 min |
-| **04** | [HTTP Methods API - Part 2](./04-http-methods-api/) | PUT, PATCH, DELETE, Status codes | ⏱️ ~35 min |
-| **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~30 min |
-| **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~20 min |
-| **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~30 min |
-| **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~40 min |
-| **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~45 min |
+| **01** | [Introduction & Setup](./01-introduction-and-setup/) | Project creation, .NET 9 setup | ⏱️ ~8 min |
+| **02-03** | [First Controller & Swagger](./02-03-first-controller-and-swagger/) | Controllers, API documentation | ⏱️ ~15 min |
+| **03** | [Swagger UI](./03-http-methods-api/) | API documentation, Testing endpoints | ⏱️ ~16 min |
+| **04** | [HTTP Methods API](./04-http-methods-api/) | PUT, PATCH, DELETE, Status codes | ⏱️ ~20 min |
+| **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~22 min |
+| **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~23 min |
+| **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~16 min |
+| **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~8 min |
+| **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~22 min |
+| **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~TBD |
 
 ## 🎯 What You'll Learn
 
@@ -63,6 +64,15 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - ✅ Service layer validation and business rule enforcement
 - ✅ Environment-aware error details (Development vs Production)
 - ✅ Centralized error handling without try-catch blocks
+
+### **Custom Middleware & Request Pipeline**
+- ✅ Creating custom middleware using `IMiddleware` interface
+- ✅ Understanding the ASP.NET Core middleware pipeline
+- ✅ Middleware registration and execution order
+- ✅ Request/Response logging and body reading
+- ✅ Performance monitoring with response timing
+- ✅ Adding custom headers to HTTP responses
+- ✅ Stream management for reading request/response bodies
 
 ### **Best Practices**
 - ✅ Separation of concerns with proper project structure
@@ -165,6 +175,16 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - Environment-aware error details for security
 - Centralized error handling eliminates try-catch blocks in controllers
 
+### **Chapter 10: Custom Middleware**
+- Creating custom middleware using the `IMiddleware` interface
+- Understanding the ASP.NET Core middleware request pipeline
+- Critical importance of middleware registration order
+- Request and response logging with complete body capture
+- Performance monitoring with `Stopwatch` and response timing headers
+- Stream buffering and management for reading request/response bodies
+- Adding custom headers like `X-Response-Time` to responses
+- Production-ready middleware patterns with dependency injection
+
 ## 🔧 Project Structure
 
 ```
@@ -187,6 +207,8 @@ aspnet-core-9-web-api-tutorial/
 │   └── RepositoryAndServicesApi/
 ├── 09-exception-handling/
 │   └── ExceptionHandlingApi/
+├── 10-custom-middleware/
+│   └── CustomMiddlewareApi/
 ├── README.md
 └── README_AR.md
 ```
@@ -228,6 +250,7 @@ aspnet-core-9-web-api-tutorial/
 7. Study **Chapter 07** for Dependency Injection concepts
 8. Build with **Chapter 08** for Repository & Service patterns
 9. Complete with **Chapter 09** for Global Exception Handling
+10. Advance with **Chapter 10** for Custom Middleware and Request Pipeline
 
 **For experienced developers:**
 - Jump to any chapter based on your needs
@@ -262,6 +285,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Dependency Injection and service lifetimes
 - ✅ Repository and Service layer patterns
 - ✅ Global exception handling with RFC 7807
+- ✅ Custom middleware and request pipeline management
 
 **Next learning paths:**
 - **Entity Framework Core** for real database integration
@@ -305,6 +329,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Structured exceptions** with proper HTTP status codes
 - ✅ **Validation in services** for better reusability and testing
 - ✅ **Production-ready** security with environment-aware error details
+
+## 💡 Custom Middleware Pro Tips
+
+**Custom Middleware enables:**
+- **Cross-cutting concerns** - Handle logging, timing, and headers in one place
+- **IMiddleware interface** - Dependency injection support with scoped services
+- **Pipeline order control** - Precise control over request/response flow
+- **Performance monitoring** - Automatic response time tracking and slow request detection
+- **Request/Response logging** - Complete body capture for debugging
+- **Reusable components** - Write once, use across all endpoints
+
+**Key concepts demonstrated in Chapter 10:**
+- ✅ **IMiddleware interface** - Modern approach with DI support
+- ✅ **Primary constructors** - C# 12 feature for cleaner code
+- ✅ **Middleware order** - Exception handlers first, routing last
+- ✅ **Stream buffering** - EnableBuffering() for reading request body multiple times
+- ✅ **OnStarting callback** - Add headers before response is sent
+- ✅ **Performance monitoring** - Stopwatch and X-Response-Time header
 
 ## 💡 AutoMapper Pro Tips
 
