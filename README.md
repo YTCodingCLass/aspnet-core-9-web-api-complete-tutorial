@@ -28,6 +28,7 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 | **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~8 min |
 | **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~22 min |
 | **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~TBD |
+| **11** | [Configuration & Options Pattern](./11-configuration-options/) | IOptions<T>, appsettings.json, Environment-specific configs | ⏱️ ~TBD |
 
 ## 🎯 What You'll Learn
 
@@ -73,6 +74,15 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - ✅ Performance monitoring with response timing
 - ✅ Adding custom headers to HTTP responses
 - ✅ Stream management for reading request/response bodies
+
+### **Configuration & Options Pattern**
+- ✅ ASP.NET Core configuration system and hierarchy
+- ✅ Options Pattern with `IOptions<T>` for strongly-typed configuration
+- ✅ Managing appsettings.json for different environments
+- ✅ Configuration binding to C# classes
+- ✅ Making middleware and services configurable
+- ✅ Environment-specific settings (Development vs Production)
+- ✅ Configuration security and best practices
 
 ### **Best Practices**
 - ✅ Separation of concerns with proper project structure
@@ -185,6 +195,16 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 - Adding custom headers like `X-Response-Time` to responses
 - Production-ready middleware patterns with dependency injection
 
+### **Chapter 11: Configuration & Options Pattern**
+- Understanding the ASP.NET Core configuration system and hierarchy
+- Implementing the Options Pattern with `IOptions<T>` interface
+- Creating strongly-typed configuration classes
+- Binding JSON configuration from appsettings.json to C# classes
+- Environment-specific configuration files (Development, Production)
+- Making middleware and services configurable at runtime
+- Configuration security best practices and secret management
+- Using `IOptionsSnapshot<T>` for reloadable configuration
+
 ## 🔧 Project Structure
 
 ```
@@ -209,6 +229,8 @@ aspnet-core-9-web-api-tutorial/
 │   └── ExceptionHandlingApi/
 ├── 10-custom-middleware/
 │   └── CustomMiddlewareApi/
+├── 11-configuration-options/
+│   └── ConfigurationOptionsApi/
 ├── README.md
 └── README_AR.md
 ```
@@ -251,6 +273,7 @@ aspnet-core-9-web-api-tutorial/
 8. Build with **Chapter 08** for Repository & Service patterns
 9. Complete with **Chapter 09** for Global Exception Handling
 10. Advance with **Chapter 10** for Custom Middleware and Request Pipeline
+11. Master **Chapter 11** for Configuration and Options Pattern
 
 **For experienced developers:**
 - Jump to any chapter based on your needs
@@ -286,6 +309,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Repository and Service layer patterns
 - ✅ Global exception handling with RFC 7807
 - ✅ Custom middleware and request pipeline management
+- ✅ Configuration and Options Pattern with strongly-typed settings
 
 **Next learning paths:**
 - **Entity Framework Core** for real database integration
@@ -347,6 +371,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Stream buffering** - EnableBuffering() for reading request body multiple times
 - ✅ **OnStarting callback** - Add headers before response is sent
 - ✅ **Performance monitoring** - Stopwatch and X-Response-Time header
+
+## 💡 Configuration & Options Pattern Pro Tips
+
+**Configuration System provides:**
+- **Type Safety** - Strongly-typed configuration classes with compile-time checking
+- **Environment Awareness** - Different settings for Development, Staging, Production
+- **Hierarchy Support** - Base configuration with environment-specific overrides
+- **Dependency Injection** - Options injected via IOptions<T> interface
+- **Reloadable Config** - Use IOptionsSnapshot<T> for runtime configuration updates
+- **Security** - Keep secrets out of appsettings.json using environment variables
+
+**Key benefits demonstrated in Chapter 11:**
+- ✅ **IOptions<T> Pattern** - Strongly-typed configuration with DI
+- ✅ **appsettings.json** - Centralized configuration management
+- ✅ **Environment-Specific** - Override settings per environment
+- ✅ **Configurable Middleware** - Change behavior without code changes
+- ✅ **Configuration Validation** - Validate critical settings at startup
+- ✅ **Secret Management** - User Secrets for dev, Environment Variables for production
 
 ## 💡 AutoMapper Pro Tips
 
