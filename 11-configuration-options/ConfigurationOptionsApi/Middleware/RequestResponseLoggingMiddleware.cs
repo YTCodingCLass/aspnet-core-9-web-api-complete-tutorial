@@ -8,18 +8,12 @@ namespace ConfigurationOptionsApi.Middleware;
 /// BEFORE: Always logs full request/response bodies - can be overwhelming in production
 /// AFTER: Uses Options Pattern - can toggle body/header logging and set size limits
 /// </summary>
-public class RequestResponseLoggingMiddleware : IMiddleware
+public class RequestResponseLoggingMiddleware(
+    ILogger<RequestResponseLoggingMiddleware> logger,
+    IOptions<RequestResponseLoggingOptions> options)
+    : IMiddleware
 {
-    private readonly ILogger<RequestResponseLoggingMiddleware> _logger;
-    private readonly RequestResponseLoggingOptions _options;
- 
-    public RequestResponseLoggingMiddleware(
-        ILogger<RequestResponseLoggingMiddleware> logger,
-        IOptions<RequestResponseLoggingOptions> options)
-    {
-        _logger = logger;
-        _options = options.Value;
-    }
+    private readonly RequestResponseLoggingOptions _options = options.Value;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -84,7 +78,7 @@ public class RequestResponseLoggingMiddleware : IMiddleware
             logBuilder.AppendLine($"Body: {body}");
         }
 
-        _logger.LogInformation(logBuilder.ToString());
+        logger.LogInformation(logBuilder.ToString());
     }
 
     private async Task LogResponse(HttpContext context)
@@ -119,6 +113,6 @@ public class RequestResponseLoggingMiddleware : IMiddleware
             logBuilder.AppendLine($"Body: {body}");
         }
 
-        _logger.LogInformation(logBuilder.ToString());
+        logger.LogInformation(logBuilder.ToString());
     }
 }

@@ -4,24 +4,30 @@ namespace CustomMiddlewareApi.Middleware;
 
 public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMiddleware> logger) : IMiddleware
 {
+    private const bool IsEnabled = true;
+    private const bool LogRequestBody = true;
+    private const bool LogResponseBody = true;
+    private const int MaxBodyLogSize = 4096;
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        // Log Request
+        if (!IsEnabled)
+        {
+            await next(context);
+            return;
+        }
+
         await LogRequest(context);
 
-        // Copy the original response stream
         var originalBodyStream = context.Response.Body;
 
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
-        // Execute the next middleware
         await next(context);
 
-        // Log Response
         await LogResponse(context);
 
-        // Copy the contents of the new response stream to the original stream
         await responseBody.CopyToAsync(originalBodyStream);
     }
 
@@ -29,19 +35,25 @@ public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMidd
     {
         context.Request.EnableBuffering();
 
-        var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-        context.Request.Body.Position = 0;
+        var requestInfo = $"HTTP Request Information:\n" +
+                          $"Method: {context.Request.Method}\n" +
+                          $"Path: {context.Request.Path}\n" +
+                          $"QueryString: {context.Request.QueryString}";
 
-        logger.LogInformation(
-            "HTTP Request Information:\n" +
-            "Method: {Method}\n" +
-            "Path: {Path}\n" +
-            "QueryString: {QueryString}\n" +
-            "Body: {Body}",
-            context.Request.Method,
-            context.Request.Path,
-            context.Request.QueryString,
-            body);
+        if (LogRequestBody)
+        {
+            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
+            context.Request.Body.Position = 0;
+
+            if (body.Length > MaxBodyLogSize)
+            {
+                body = body[..MaxBodyLogSize] + "... [TRUNCATED]";
+            }
+
+            requestInfo += $"\nBody: {body}";
+        }
+
+        logger.LogInformation(requestInfo);
     }
 
     private async Task LogResponse(HttpContext context)
@@ -50,11 +62,19 @@ public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMidd
         var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
         context.Response.Body.Seek(0, SeekOrigin.Begin);
 
-        logger.LogInformation(
-            "HTTP Response Information:\n" +
-            "StatusCode: {StatusCode}\n" +
-            "Body: {Body}",
-            context.Response.StatusCode,
-            body);
+        var responseInfo = $"HTTP Response Information:\n" +
+                           $"StatusCode: {context.Response.StatusCode}";
+
+        if (LogResponseBody)
+        {
+            if (body.Length > MaxBodyLogSize)
+            {
+                body = body[..MaxBodyLogSize] + "... [TRUNCATED]";
+            }
+
+            responseInfo += $"\nBody: {body}";
+        }
+
+        logger.LogInformation(responseInfo);
     }
 }
