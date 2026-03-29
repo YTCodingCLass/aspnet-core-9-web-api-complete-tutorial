@@ -623,7 +623,7 @@ Content-Type: application/json
 ## 🔧 Running the Project
 
 ```bash
-cd 12-azure-oauth-authorization/AzureOAuthApi
+cd 13-azure-oauth-authorization/AzureOAuthApi
 dotnet restore
 dotnet run
 ```
