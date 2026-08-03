@@ -27,8 +27,9 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 | **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~16 min |
 | **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~8 min |
 | **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~22 min |
-| **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~TBD |
-| **11** | [Configuration & Options Pattern](./11-configuration-options/) | IOptions<T>, appsettings.json, Environment-specific configs | ⏱️ ~TBD |
+| **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~8 min |
+| **11** | [Configuration & Options Pattern](./11-configuration-options/) | IOptions<T>, appsettings.json, Environment-specific configs | ⏱️ ~14 min |
+| **13** | [Azure OAuth Authorization](./13-azure-oauth-authorization/) | OAuth 2.0 Authorization Code Flow with PKCE | ⏱️ ~5 min |
 
 ## 🎯 What You'll Learn
 

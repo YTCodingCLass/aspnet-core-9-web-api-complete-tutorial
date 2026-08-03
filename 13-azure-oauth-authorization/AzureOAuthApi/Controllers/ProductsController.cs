@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using AzureOAuthApi.Models.DTOs;
 using AzureOAuthApi.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AzureOAuthApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]  // ← Requires valid token for ALL endpoints
 public class ProductsController(IProductService productService) : ControllerBase
 {
     [HttpGet]

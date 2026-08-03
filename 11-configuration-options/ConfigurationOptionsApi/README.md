@@ -5,7 +5,7 @@
 ![Settings](https://img.shields.io/badge/App-Settings-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Configuration and Options Pattern Tutorial](https://youtu.be/YOUR_VIDEO_ID)**
+**🔗 [Watch Configuration and Options Pattern Tutorial](https://www.youtube.com/watch?v=S3ygXq94dLo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=2)**
 
 ## 🎯 Learning Objectives
 

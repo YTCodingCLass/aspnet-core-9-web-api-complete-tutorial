@@ -39,6 +39,9 @@ public class RequestResponseLoggingMiddleware(
         // Log Response
         await LogResponse(context);
 
+        // Reset position before copying — next(context) leaves the stream at the end
+        responseBody.Seek(0, SeekOrigin.Begin);
+
         // Copy the contents of the new response stream to the original stream
         await responseBody.CopyToAsync(originalBodyStream);
     }

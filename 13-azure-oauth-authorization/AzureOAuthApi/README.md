@@ -1,743 +1,352 @@
-# Configuration and Options Pattern in ASP.NET Core 9
+# Azure OAuth Authorization in ASP.NET Core 9
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)
-![Configuration](https://img.shields.io/badge/Configuration-Options_Pattern-FF6B35?style=flat-square)
-![Settings](https://img.shields.io/badge/App-Settings-2E8B57?style=flat-square)
+![Authentication](https://img.shields.io/badge/Authentication-Microsoft_Identity_Web-0078D4?style=flat-square)
+![OAuth](https://img.shields.io/badge/OAuth_2.0-Authorization_Code_%2B_PKCE-EB5424?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Configuration and Options Pattern Tutorial](https://youtu.be/YOUR_VIDEO_ID)**
+
+The chapter 13 implementation video link is not available in the repository yet.
+
+**Prerequisite:** [OAuth 2.0 Authorization Code Flow with PKCE — diagram explanation](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)
+
+> The linked video explains the chapter 12 OAuth concepts. It is not the chapter 13 Azure implementation video.
 
 ## 🎯 Learning Objectives
 
-By the end of this tutorial, you'll master:
-- ✅ **Configuration System** - Understanding ASP.NET Core configuration hierarchy
-- ✅ **Options Pattern** - Strongly-typed configuration with `IOptions<T>`
-- ✅ **appsettings.json** - Managing configuration files for different environments
-- ✅ **Configuration Binding** - Binding JSON configuration to C# classes
-- ✅ **Configurable Middleware** - Making middleware behavior configurable
-- ✅ **Environment-Specific Settings** - Development vs Production configuration
-- ✅ **Configuration Best Practices** - Secure and maintainable configuration management
+By the end of this chapter, you will understand how to:
+
+- Configure an ASP.NET Core Web API to validate Microsoft Entra ID access tokens.
+- Register JWT bearer authentication with `Microsoft.Identity.Web`.
+- Protect a controller with `[Authorize]`.
+- Describe OAuth 2.0 Authorization Code flow in Swagger/OpenAPI.
+- Use PKCE from Swagger UI without placing a client secret in the browser.
+- Expose `Products.Read` and `Products.Write` scopes in the Swagger authorization dialog.
+- Place `UseAuthentication()` before `UseAuthorization()` in the request pipeline.
+- Keep tenant IDs, client IDs, and secrets out of committed documentation and production configuration.
 
 ## 🚀 What We Build
 
-A **Production-Ready Configuration System** featuring:
+This chapter secures the inherited products API with Microsoft Entra ID:
 
-1. **RequestResponseLoggingOptions** - Strongly-typed configuration class
-2. **Configurable Middleware** - Middleware that reads settings from appsettings.json
-3. **Environment-Specific Configuration** - Different settings for Development and Production
-4. **Options Pattern Implementation** - Dependency injection of configuration settings
+1. The API validates bearer tokens using the `AzureAd` configuration section.
+2. Every action in `ProductsController` requires an authenticated caller.
+3. Swagger UI starts the OAuth 2.0 Authorization Code flow and uses PKCE.
+4. Swagger advertises `Products.Read` and `Products.Write` permissions.
+5. Requests without a valid access token receive `401 Unauthorized`.
+
+The repository, service, DTO, AutoMapper, exception-handler, custom-middleware, in-memory data, and Options Pattern code are inherited from chapter 11.
 
 ## 📁 Project Structure
 
-```
+```text
 AzureOAuthApi/
 ├── Controllers/
-│   └── ProductsController.cs        # API endpoints
-├── Configuration/                    # ⭐ Configuration classes
-│   └── RequestResponseLoggingOptions.cs # Strongly-typed options class ⭐
-├── Middleware/                       # Custom middleware components
-│   ├── RequestLoggingMiddleware.cs  # Logs HTTP requests and responses
-│   ├── ResponseTimingMiddleware.cs  # Measures and logs response time
-│   └── RequestResponseLoggingMiddleware.cs # Configurable logging middleware ⭐
-├── Exceptions/                       # Custom exception types
-│   ├── BaseException.cs             # Base exception with status code
-│   ├── NotFoundException.cs         # 404 Not Found
-│   ├── BadRequestException.cs       # 400 Bad Request
-│   ├── ValidationException.cs       # 422 Unprocessable Entity
-│   ├── UnauthorizedException.cs     # 401 Unauthorized
-│   ├── ForbiddenException.cs        # 403 Forbidden
-│   └── ConflictException.cs         # 409 Conflict
-├── Handlers/                         # Exception handlers
-│   ├── GlobalExceptionHandler.cs    # Catches all unhandled exceptions
-│   ├── BusinessExceptionHandler.cs  # Handles business exceptions
-│   └── ValidationExceptionHandler.cs # Handles validation errors
-├── Models/
-│   ├── Product.cs                   # Product entity
-│   ├── Supplier.cs                  # Supplier entity
-│   └── DTOs/
-│       └── ProductDtos.cs           # Product DTOs
-├── Repositories/
-│   ├── IProductRepository.cs        # Repository interface
-│   └── ProductRepository.cs         # Repository implementation
-├── Services/
-│   ├── IProductService.cs           # Service interface
-│   ├── ProductService.cs            # Service with validation logic
-│   ├── INotificationService.cs      # Notification service interface
-│   └── NotificationService.cs       # Notification implementation
+│   └── ProductsController.cs          # ⭐ [Authorize] protects every action
+├── Configuration/
+│   └── RequestResponseLoggingOptions.cs # Inherited Options Pattern
 ├── Data/
-│   └── InMemoryDatabase.cs          # In-memory data store
+│   └── InMemoryDatabase.cs            # Inherited in-memory data
+├── Exceptions/                        # Inherited custom exceptions
+├── Handlers/                          # Inherited exception handlers
 ├── Mappings/
-│   └── MappingProfile.cs            # AutoMapper configuration
-├── Program.cs                       # Configuration and DI setup ⭐
-├── appsettings.json                 # Base configuration file ⭐
-├── appsettings.Development.json     # Development-specific settings ⭐
-└── AzureOAuthApi.http     # HTTP requests for testing
+│   └── MappingProfile.cs              # Inherited AutoMapper profile
+├── Middleware/                        # Inherited custom middleware
+├── Models/                            # Product models and DTOs
+├── Repositories/                      # Inherited repository layer
+├── Services/                          # Inherited service layer
+├── Properties/
+│   └── launchSettings.json            # Local launch profiles
+├── AzureOAuthApi.csproj               # ⭐ Identity packages and user-secrets support
+├── Program.cs                         # ⭐ Authentication, authorization, and Swagger OAuth
+├── appsettings.json                   # Shared non-sensitive settings
+└── appsettings.Development.json       # ⭐ AzureAd configuration shape
 ```
 
-## 🏗️ Configuration System Architecture
+> This chapter does not contain an `.http` request file.
 
-### **Configuration Hierarchy Flow**
+## 🆕 What's New Compared with Chapter 11
 
-```
-┌─────────────────────────────────────────────────────┐
-│          Configuration Sources (Priority)           │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  1. appsettings.json (Base Configuration)           │
-│     • Common settings for all environments          │
-│     • Default values                                │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  2. appsettings.{Environment}.json                  │
-│     • Environment-specific overrides                │
-│     • Development, Staging, Production              │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  3. Environment Variables (Highest Priority)        │
-│     • Container/Cloud configuration                 │
-│     • Secrets and sensitive data                    │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│           Configuration Builder                     │
-│     • Merges all sources                            │
-│     • Later sources override earlier ones           │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│         Options Pattern (IOptions<T>)               │
-│     • Strongly-typed configuration classes          │
-│     • Dependency injection                          │
-│     • Type-safe access to settings                  │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│        Application Components                       │
-│     • Middleware                                    │
-│     • Services                                      │
-│     • Controllers                                   │
-└─────────────────────────────────────────────────────┘
+Chapter 11 (`ConfigurationOptionsApi`) is the previous runnable baseline. Chapter 12 contains diagrams and OAuth theory, so it is conceptual context rather than a code baseline.
+
+| Area | Chapter 11 | Chapter 13 |
+|---|---|---|
+| Authentication | Not configured | JWT bearer authentication through `Microsoft.Identity.Web` |
+| Authorization services | Existing middleware call only | `AddAuthorization()` is registered explicitly |
+| Controller protection | Product endpoints are anonymous | `[Authorize]` protects the entire controller |
+| Swagger | Basic Swagger UI | OAuth 2.0 Authorization Code flow with PKCE |
+| Scopes shown by Swagger | None | `Products.Read` and `Products.Write` |
+| Pipeline | `UseAuthorization()` | `UseAuthentication()` before `UseAuthorization()` |
+| Identity configuration | None | `AzureAd` section in Development settings |
+| Existing architecture | Repository, service, middleware, exceptions, Options Pattern | Inherited without a new architectural layer |
+
+## 🏗️ Authentication Request Flow
+
+```text
+User
+  │
+  │ 1. Clicks Authorize in Swagger UI
+  ▼
+Microsoft Entra ID /authorize endpoint
+  │
+  │ 2. Authorization code returned to Swagger UI
+  ▼
+Swagger UI + PKCE
+  │
+  │ 3. Exchanges code and verifier at /token
+  │ 4. Sends Authorization: Bearer <access_token>
+  ▼
+UseAuthentication()
+  │  Validates token and creates the authenticated user
+  ▼
+UseAuthorization()
+  │  Evaluates [Authorize]
+  ▼
+ProductsController → ProductService → ProductRepository → InMemoryDatabase
 ```
 
-## 💻 Configuration Implementation
+Authentication answers “who is calling?” Authorization answers “may this caller access the endpoint?” Both are required, and middleware order is significant.
 
-### **Step 1: Create a Strongly-Typed Options Class**
+## 💻 Step-by-Step Implementation
 
-```csharp
-// Configuration/RequestResponseLoggingOptions.cs
-namespace AzureOAuthApi.Configuration;
+### Step 1: Add the identity packages
 
-/// <summary>
-/// Configuration options for the RequestResponseLoggingMiddleware.
-/// Demonstrates the Options Pattern for making middleware configurable.
-/// </summary>
-public class RequestResponseLoggingOptions
-{
-    /// <summary>
-    /// The configuration section name in appsettings.json
-    /// </summary>
-    public const string SectionName = "RequestResponseLogging";
+`AzureOAuthApi.csproj` targets .NET 9 and includes these chapter-specific packages:
 
-    /// <summary>
-    /// Enable or disable detailed request/response logging
-    /// </summary>
-    public bool IsEnabled { get; set; } = false;
-
-    /// <summary>
-    /// Include request headers in logs
-    /// </summary>
-    public bool IncludeRequestHeaders { get; set; } = false;
-
-    /// <summary>
-    /// Include response headers in logs
-    /// </summary>
-    public bool IncludeResponseHeaders { get; set; } = false;
-
-    /// <summary>
-    /// Include request body in logs
-    /// </summary>
-    public bool IncludeRequestBody { get; set; } = true;
-
-    /// <summary>
-    /// Include response body in logs
-    /// </summary>
-    public bool IncludeResponseBody { get; set; } = true;
-
-    /// <summary>
-    /// Maximum body size to log (in bytes). Bodies larger than this will be truncated.
-    /// </summary>
-    public int MaxBodySizeToLog { get; set; } = 4096;
-}
+```xml
+<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.0" />
+<PackageReference Include="Azure.Identity" Version="1.21.0" />
+<PackageReference Include="Microsoft.Identity.Web" Version="4.7.0" />
 ```
 
-**Key Concepts:**
-- **SectionName Constant** - Defines the configuration section name
-- **Default Values** - Provides sensible defaults for all properties
-- **XML Documentation** - Clear descriptions for each setting
-- **Type Safety** - Strongly-typed properties instead of magic strings
+`Microsoft.Identity.Web` is actively used to configure bearer-token validation. The two Azure packages are installed, but the current `Program.cs` does not connect the application to Azure Key Vault.
 
----
+The project also contains a `UserSecretsId`, which enables local user-secrets storage. Its machine-specific value is intentionally omitted here.
 
-### **Step 2: Define Configuration in appsettings.json**
+### Step 2: Define the `AzureAd` configuration shape
+
+The current application reads identity settings from `AzureAd`. Use placeholders in shared documentation and source control:
 
 ```json
-// appsettings.json - Base configuration
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "RequestResponseLogging": {
-    "IsEnabled": true,
-    "IncludeRequestHeaders": false,
-    "IncludeResponseHeaders": false,
-    "IncludeRequestBody": true,
-    "IncludeResponseBody": true,
-    "MaxBodySizeToLog": 4096
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "YOUR_TENANT_ID",
+    "ClientId": "YOUR_CLIENT_ID",
+    "ClientSecret": "",
+    "Scopes": "Products.Read Products.Write"
   }
 }
 ```
 
-```json
-// appsettings.Development.json - Development overrides
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information"
-    }
-  },
-  "RequestResponseLogging": {
-    "IsEnabled": true,
-    "IncludeRequestHeaders": true,
-    "IncludeResponseHeaders": true,
-    "IncludeRequestBody": true,
-    "IncludeResponseBody": true,
-    "MaxBodySizeToLog": 8192
-  }
-}
-```
+- `TenantId` identifies the Microsoft Entra tenant.
+- `ClientId` identifies the application registration used by this lesson.
+- `Products.Read` and `Products.Write` must exist under **Expose an API** in Microsoft Entra ID.
+- The current code constructs scope URIs as `api://YOUR_CLIENT_ID/Products.Read` and `api://YOUR_CLIENT_ID/Products.Write`.
+- Swagger uses Authorization Code flow with PKCE, so do not place a client secret in Swagger UI or committed JSON.
 
-```json
-// appsettings.Production.json - Production overrides
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "RequestResponseLogging": {
-    "IsEnabled": false,
-    "IncludeRequestHeaders": false,
-    "IncludeResponseHeaders": false,
-    "IncludeRequestBody": false,
-    "IncludeResponseBody": false,
-    "MaxBodySizeToLog": 2048
-  }
-}
-```
+### Step 3: Register authentication and authorization
 
-**Key Concepts:**
-- **Hierarchical Configuration** - Base settings with environment overrides
-- **JSON Structure** - Matches the C# class property names
-- **Environment-Specific** - Different settings for Development vs Production
-- **Security** - Disable verbose logging in Production
-
----
-
-### **Step 3: Register Options in Program.cs**
+`Program.cs` sets JWT bearer as the default authentication scheme and binds Microsoft Identity Web to configuration:
 
 ```csharp
-// Program.cs
-var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration);
 
-// ========================================
-// Configure Options Pattern
-// ========================================
-// Bind configuration sections to strongly-typed options classes
-// This demonstrates the Options Pattern for configurable middleware
-builder.Services.Configure<RequestResponseLoggingOptions>(
-    builder.Configuration.GetSection(RequestResponseLoggingOptions.SectionName));
-
-// Other service registrations...
-builder.Services.AddControllers();
-builder.Services.AddAutoMapper(typeof(MappingProfile));
-
-// Register middleware services
-builder.Services.AddScoped<RequestResponseLoggingMiddleware>();
-builder.Services.AddScoped<ResponseTimingMiddleware>();
-builder.Services.AddScoped<RequestLoggingMiddleware>();
-
-var app = builder.Build();
-
-// Configure middleware pipeline
-app.UseExceptionHandler();
-app.UseMiddleware<RequestResponseLoggingMiddleware>(); // Uses IOptions<T>
-app.UseMiddleware<ResponseTimingMiddleware>();
-app.UseMiddleware<RequestLoggingMiddleware>();
-
-app.Run();
+builder.Services.AddAuthorization();
 ```
 
-**Key Concepts:**
-- **Configure<T>()** - Registers options with the DI container
-- **GetSection()** - Retrieves the configuration section by name
-- **Strong Typing** - Configuration is bound to `RequestResponseLoggingOptions`
-- **Dependency Injection** - Options are injected into components
+`AddMicrosoftIdentityWebApi` reads the default `AzureAd` section and configures access-token validation for the API.
 
----
+### Step 4: Configure Swagger OAuth 2.0 scopes
 
-### **Step 4: Consume Options in Middleware**
+Swagger reads the tenant and client identifiers, then builds Microsoft identity platform v2.0 endpoints:
 
 ```csharp
-// Middleware/RequestResponseLoggingMiddleware.cs
-using Microsoft.Extensions.Options;
+var tenantId = builder.Configuration["AzureAd:TenantId"];
+var clientId = builder.Configuration["AzureAd:ClientId"];
 
-public class RequestResponseLoggingMiddleware(
-    ILogger<RequestResponseLoggingMiddleware> logger,
-    IOptions<RequestResponseLoggingOptions> options)  // ⭐ Inject IOptions<T>
-    : IMiddleware
+options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
 {
-    private readonly RequestResponseLoggingOptions _options = options.Value; // ⭐ Get the value
-
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    Type = SecuritySchemeType.OAuth2,
+    Flows = new OpenApiOAuthFlows
     {
-        // Check if logging is enabled via configuration
-        if (!_options.IsEnabled)
+        AuthorizationCode = new OpenApiOAuthFlow
         {
-            await next(context);
-            return;
-        }
-
-        // Log Request
-        await LogRequest(context);
-
-        // Copy the original response stream
-        var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
-        // Execute the next middleware
-        await next(context);
-
-        // Log Response
-        await LogResponse(context);
-
-        // Copy the contents back to original stream
-        await responseBody.CopyToAsync(originalBodyStream);
-    }
-
-    private async Task LogRequest(HttpContext context)
-    {
-        var logBuilder = new StringBuilder();
-        logBuilder.AppendLine("HTTP Request Information:");
-        logBuilder.AppendLine($"Method: {context.Request.Method}");
-        logBuilder.AppendLine($"Path: {context.Request.Path}");
-
-        // Include headers if configured
-        if (_options.IncludeRequestHeaders)
-        {
-            logBuilder.AppendLine("Headers:");
-            foreach (var header in context.Request.Headers)
+            AuthorizationUrl = new Uri(
+                $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
+            TokenUrl = new Uri(
+                $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
+            Scopes = new Dictionary<string, string>
             {
-                logBuilder.AppendLine($"  {header.Key}: {header.Value}");
+                { $"api://{clientId}/Products.Read", "Read products" },
+                { $"api://{clientId}/Products.Write", "Write products" }
             }
         }
-
-        // Include body if configured
-        if (_options.IncludeRequestBody)
-        {
-            context.Request.EnableBuffering();
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            context.Request.Body.Position = 0;
-
-            // Truncate if body exceeds max size
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [TRUNCATED]";
-            }
-
-            logBuilder.AppendLine($"Body: {body}");
-        }
-
-        logger.LogInformation(logBuilder.ToString());
     }
-
-    private async Task LogResponse(HttpContext context)
-    {
-        var logBuilder = new StringBuilder();
-        logBuilder.AppendLine("HTTP Response Information:");
-        logBuilder.AppendLine($"StatusCode: {context.Response.StatusCode}");
-
-        // Include headers if configured
-        if (_options.IncludeResponseHeaders)
-        {
-            logBuilder.AppendLine("Headers:");
-            foreach (var header in context.Response.Headers)
-            {
-                logBuilder.AppendLine($"  {header.Key}: {header.Value}");
-            }
-        }
-
-        // Include body if configured
-        if (_options.IncludeResponseBody)
-        {
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-
-            // Truncate if body exceeds max size
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [TRUNCATED]";
-            }
-
-            logBuilder.AppendLine($"Body: {body}");
-        }
-
-        logger.LogInformation(logBuilder.ToString());
-    }
-}
+});
 ```
 
-**Key Concepts:**
-- **IOptions<T> Injection** - Options are injected via constructor
-- **options.Value** - Access the configured settings
-- **Configuration-Driven Behavior** - Middleware behavior changes based on settings
-- **Runtime Configuration** - No code changes needed to modify behavior
-- **Body Size Limiting** - Prevents logging massive payloads
-
----
-
-## 🎨 Options Pattern Benefits
-
-### **Before: Hardcoded Configuration** ❌
+The OpenAPI security requirement requests `Products.Read` by default. Swagger UI then supplies the configured client ID and enables PKCE:
 
 ```csharp
-public class RequestResponseLoggingMiddleware : IMiddleware
+app.UseSwaggerUI(options =>
 {
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        // Always logs everything - no flexibility
-        var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-        logger.LogInformation($"Request Body: {body}");
-
-        await next(context);
-    }
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+    options.OAuthClientId(builder.Configuration["AzureAd:ClientId"]);
+    options.OAuthUsePkce();
+    options.OAuthScopeSeparator(" ");
+});
 ```
 
-**Problems:**
-- ❌ No way to disable logging
-- ❌ Always logs full bodies (could be huge!)
-- ❌ Can't toggle headers on/off
-- ❌ Requires code changes to modify behavior
+Register the Swagger redirect URI that matches the profile you run, for example:
 
----
+```text
+http://localhost:5213/swagger/oauth2-redirect.html
+```
 
-### **After: Options Pattern** ✅
+### Step 5: Protect the products controller
+
+`[Authorize]` is applied at controller level, so it covers GET, POST, PUT, DELETE, and bulk-create actions:
 
 ```csharp
-public class RequestResponseLoggingMiddleware(
-    ILogger<RequestResponseLoggingMiddleware> logger,
-    IOptions<RequestResponseLoggingOptions> options) : IMiddleware
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ProductsController(IProductService productService) : ControllerBase
 {
-    private readonly RequestResponseLoggingOptions _options = options.Value;
-
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        // Check if enabled via configuration
-        if (!_options.IsEnabled)
-        {
-            await next(context);
-            return;
-        }
-
-        // Log only if configured
-        if (_options.IncludeRequestBody)
-        {
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-
-            // Truncate if needed
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [TRUNCATED]";
-            }
-
-            logger.LogInformation($"Request Body: {body}");
-        }
-
-        await next(context);
-    }
+    // All actions require an authenticated user.
 }
 ```
 
-**Benefits:**
-- ✅ Enable/disable via appsettings.json
-- ✅ Body size limits to prevent huge logs
-- ✅ Toggle headers/body independently
-- ✅ Environment-specific configuration
-- ✅ No code changes needed
+Important: the current lesson checks for an authenticated user only. It displays `Products.Read` and `Products.Write` in Swagger, but it does not call `RequiredScope`, define authorization policies, or apply different scope requirements to read and write actions. A valid authenticated token can therefore reach every controller action. Fine-grained scope enforcement is a logical next step.
 
----
+### Step 6: Order authentication before authorization
 
-## 🔧 Configuration Patterns
-
-### **Pattern 1: Simple Configuration Binding**
+The request pipeline preserves inherited exception and custom middleware, then adds the security middleware in this order:
 
 ```csharp
-// Register options
-builder.Services.Configure<MyOptions>(
-    builder.Configuration.GetSection("MySection"));
+app.UseHttpsRedirection();
 
-// Consume in service
-public class MyService(IOptions<MyOptions> options)
-{
-    private readonly MyOptions _options = options.Value;
-}
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 ```
 
-### **Pattern 2: Configuration with Validation**
+`UseAuthentication()` must run first so it can validate the bearer token and populate `HttpContext.User` before authorization evaluates `[Authorize]`.
 
-```csharp
-// Options class with validation
-public class ApiKeyOptions
-{
-    public string ApiKey { get; set; } = string.Empty;
-}
+## 🔐 Microsoft Entra ID Setup Checklist
 
-// Register with validation
-builder.Services.AddOptions<ApiKeyOptions>()
-    .Bind(builder.Configuration.GetSection("ApiKey"))
-    .Validate(options => !string.IsNullOrEmpty(options.ApiKey),
-              "API Key is required");
+Before testing Swagger:
+
+1. Create or select an app registration for the API.
+2. Under **Expose an API**, set the Application ID URI to `api://YOUR_CLIENT_ID`.
+3. Create delegated scopes named `Products.Read` and `Products.Write`.
+4. Configure a platform redirect URI matching Swagger, such as `http://localhost:5213/swagger/oauth2-redirect.html`.
+5. Grant the client permission to the required exposed scopes and provide consent when your tenant requires it.
+6. Supply the correct tenant and client IDs locally without committing real identifiers or secrets.
+
+The application registration must agree with the exact scope URIs and redirect URI constructed by the code.
+
+## 🔒 Safe Local Configuration
+
+For local development, use user secrets instead of committing real identifiers:
+
+```bash
+cd 13-azure-oauth-authorization/AzureOAuthApi
+dotnet user-secrets set "AzureAd:TenantId" "YOUR_TENANT_ID"
+dotnet user-secrets set "AzureAd:ClientId" "YOUR_CLIENT_ID"
 ```
 
-### **Pattern 3: Multiple Configuration Sources**
+Environment variables are another supported configuration source:
 
-```csharp
-// Build configuration from multiple sources
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json", optional: false)
-    .AddJsonFile($"appsettings.{environment}.json", optional: true)
-    .AddEnvironmentVariables()
-    .AddUserSecrets<Program>()  // Development secrets
-    .Build();
+```bash
+AzureAd__TenantId=YOUR_TENANT_ID
+AzureAd__ClientId=YOUR_CLIENT_ID
 ```
 
-### **Pattern 4: IOptionsSnapshot for Reloadable Configuration**
+Security notes:
 
-```csharp
-// Use IOptionsSnapshot instead of IOptions for reloadable config
-public class MyService(IOptionsSnapshot<MyOptions> options)
-{
-    // Options are re-evaluated on each request if config file changes
-    private MyOptions GetCurrentOptions() => options.Value;
-}
+- Never commit real tenant IDs, client IDs, client secrets, tokens, or vault names in tutorial documentation.
+- PKCE protects the authorization-code exchange; it does not make a browser capable of safely holding a client secret.
+- Avoid logging bearer tokens or sensitive authorization headers.
+- Although Azure Key Vault dependencies are present, Key Vault is not active until configuration code is added deliberately.
+
+## 🧪 Test the Protected API with Swagger
+
+### 1. Start the Development profile
+
+Swagger is enabled only in Development. The repository's `http` profile uses Development and listens on port `5213`:
+
+```bash
+cd 13-azure-oauth-authorization/AzureOAuthApi
+dotnet run --launch-profile http
 ```
 
-## 🧪 Testing Configuration
+Open:
 
-### **Test Different Configuration Values**
+```text
+http://localhost:5213/swagger
+```
+
+The `https` launch profile currently sets `ASPNETCORE_ENVIRONMENT` to `Production`, so Swagger is not shown when that profile is used.
+
+### 2. Confirm anonymous access is rejected
+
+Call `GET /api/Products` before authorizing.
+
+Expected result:
 
 ```http
-### Test with IsEnabled = true (Default)
-GET https://localhost:7xxx/api/products
+HTTP/1.1 401 Unauthorized
 ```
 
-**Expected:** Full request/response logging in console
+### 3. Authorize with Microsoft Entra ID
 
----
+1. Click **Authorize** in Swagger UI.
+2. Select the available scope or scopes.
+3. Sign in with an account allowed by the tenant.
+4. Complete consent if prompted.
+5. Call `GET /api/Products` again.
 
-```http
-### Change appsettings.json: IsEnabled = false
-GET https://localhost:7xxx/api/products
-```
+With a valid access token for this API, the endpoint returns `200 OK` and the in-memory product data. An expired token, malformed token, wrong tenant, wrong audience, mismatched scope URI, or redirect-URI mismatch prevents a successful test.
 
-**Expected:** No detailed logging
-
----
-
-```http
-### Change IncludeRequestHeaders = true
-POST https://localhost:7xxx/api/products
-Content-Type: application/json
-
-{
-  "name": "Test Product",
-  "price": 99.99
-}
-```
-
-**Expected:** Headers included in logs
-
----
-
-## 🎓 Key Benefits
-
-### **1. Type Safety**
-- ✅ Strongly-typed configuration classes
-- ✅ Compile-time checking
-- ✅ IntelliSense support
-- ✅ Refactoring safety
-
-### **2. Maintainability**
-- ✅ Centralized configuration
-- ✅ Clear structure with XML docs
-- ✅ Default values in code
-- ✅ Easy to understand and modify
-
-### **3. Environment Management**
-- ✅ Base settings with overrides
-- ✅ Development vs Production configs
-- ✅ Container/Cloud ready
-- ✅ Secret management support
-
-### **4. Flexibility**
-- ✅ Change behavior without code changes
-- ✅ Toggle features on/off
-- ✅ Adjust limits and thresholds
-- ✅ Runtime configuration updates (with IOptionsSnapshot)
-
-### **5. Testability**
-- ✅ Easy to mock IOptions<T>
-- ✅ Inject test configurations
-- ✅ Unit test with different settings
-- ✅ Integration test environment configs
-
----
-
-## 🔧 Running the Project
+## ▶️ Build and Run
 
 ```bash
 cd 13-azure-oauth-authorization/AzureOAuthApi
 dotnet restore
-dotnet run
+dotnet build
+dotnet run --launch-profile http
 ```
 
-**Swagger UI**: `https://localhost:7xxx/swagger`
-**Products API**: `https://localhost:7xxx/api/products`
+The project targets .NET 9. Install the .NET 9 SDK before running these commands.
 
-### **Testing Different Environments**
+## 🛠️ Troubleshooting
 
-```bash
-# Run with Development environment (uses appsettings.Development.json)
-dotnet run --environment Development
+| Symptom | Check |
+|---|---|
+| Swagger is missing | Run the `http` profile or otherwise set the environment to Development |
+| `401 Unauthorized` after sign-in | Verify tenant, audience/client ID, token expiry, and that Swagger sends the bearer token |
+| `AADSTS50011` redirect error | Register the exact Swagger OAuth redirect URI |
+| Scope does not appear | Expose `Products.Read` and `Products.Write` with the exact Application ID URI |
+| Authorization succeeds but write actions are still available | This chapter uses `[Authorize]` only; per-action scope enforcement is not implemented yet |
+| Key Vault settings have no effect | The packages are installed, but the current application does not add Key Vault as a configuration provider |
 
-# Run with Production environment (uses appsettings.Production.json)
-dotnet run --environment Production
+## ✅ Key Takeaways
 
-# Run with custom environment
-dotnet run --environment Staging
-```
+- `Microsoft.Identity.Web` integrates Microsoft Entra ID token validation with ASP.NET Core JWT bearer authentication.
+- `[Authorize]` makes every `ProductsController` action require an authenticated user.
+- Swagger can demonstrate Authorization Code flow safely with PKCE.
+- Swagger-advertised scopes do not enforce permissions by themselves.
+- `UseAuthentication()` must precede `UseAuthorization()`.
+- Chapter 13 retains chapter 11's application architecture and adds a security boundary around it.
+- Sensitive identifiers belong in user secrets, environment variables, managed cloud configuration, or an intentionally configured secret store—not in tracked tutorial files.
 
----
+## 🚀 Next Steps
 
-## 🎯 Key Takeaways
-
-1. **Options Pattern**: Use `IOptions<T>` for strongly-typed configuration
-2. **Configuration Hierarchy**: appsettings.json → appsettings.{Environment}.json → Environment Variables
-3. **Type Safety**: Configuration classes provide compile-time checking
-4. **Environment-Specific**: Different settings for Development, Staging, Production
-5. **Dependency Injection**: Options are injected into services and middleware
-6. **Reloadable Config**: Use `IOptionsSnapshot<T>` for configs that change at runtime
-7. **Validation**: Add configuration validation for critical settings
-8. **Security**: Store secrets in environment variables or Key Vault, not in appsettings.json
-
----
-
-## 🔒 Configuration Security Best Practices
-
-### **❌ Never Store Secrets in appsettings.json**
-
-```json
-// DON'T DO THIS!
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=prod;Database=MyDb;User=admin;Password=Pa$$w0rd123"
-  },
-  "ApiKeys": {
-    "PaymentGateway": "sk_live_abc123xyz789"
-  }
-}
-```
-
-### **✅ Use Environment Variables or Secret Managers**
-
-```csharp
-// Development: User Secrets
-dotnet user-secrets init
-dotnet user-secrets set "ApiKeys:PaymentGateway" "sk_test_abc123"
-
-// Production: Environment Variables
-// Set in Azure App Service, Kubernetes, Docker, etc.
-export ApiKeys__PaymentGateway="sk_live_xyz789"
-```
-
-```csharp
-// Access secrets the same way as normal config
-builder.Services.Configure<ApiKeyOptions>(
-    builder.Configuration.GetSection("ApiKeys"));
-```
-
----
-
-## ➡️ What's Next?
-
-**Extend this configuration system with:**
-- **Azure Key Vault** - Store secrets in Azure Key Vault
-- **Configuration Validation** - Validate settings at startup
-- **IOptionsSnapshot** - Reloadable configuration without restart
-- **IOptionsMonitor** - Track configuration changes with callbacks
-- **Custom Configuration Providers** - Load config from database, APIs, etc.
-- **Feature Flags** - Toggle features dynamically
-- **Configuration Encryption** - Encrypt sensitive sections
-
----
-
-## 💡 Pro Tips
-
-1. **Use const for Section Names** - Prevents typos and enables refactoring
-   ```csharp
-   public const string SectionName = "RequestResponseLogging";
-   ```
-
-2. **Provide Default Values** - Initialize properties with sensible defaults
-   ```csharp
-   public bool IsEnabled { get; set; } = false;
-   ```
-
-3. **Document Configuration** - Use XML comments for all options
-   ```csharp
-   /// <summary>
-   /// Maximum body size to log (in bytes)
-   /// </summary>
-   public int MaxBodySizeToLog { get; set; } = 4096;
-   ```
-
-4. **Validate Configuration** - Add startup validation for critical settings
-   ```csharp
-   builder.Services.AddOptions<MyOptions>()
-       .Validate(o => o.MaxSize > 0, "MaxSize must be positive");
-   ```
-
-5. **Environment-Specific Configs** - Use different settings for each environment
-   - Development: Verbose logging, debug mode
-   - Production: Minimal logging, optimized settings
-
----
-
-**💡 Pro Tip**: The Options Pattern is the recommended way to access configuration in ASP.NET Core. It provides type safety, dependency injection, and flexibility without sacrificing performance!
+- Enforce `Products.Read` on GET actions and `Products.Write` on mutation actions.
+- Add role- or policy-based authorization where the domain requires it.
+- Add automated integration tests for anonymous, invalid-token, and authorized requests.
+- Configure Azure Key Vault only when the lesson intentionally introduces it and an appropriate credential strategy is available.

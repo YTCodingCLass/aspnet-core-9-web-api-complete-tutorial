@@ -5,7 +5,7 @@
 ![Pipeline](https://img.shields.io/badge/Request-Pipeline-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Custom Middleware Tutorial](https://youtu.be/n1A_IjEf_hs)**
+**🔗 [Watch Custom Middleware Tutorial](https://www.youtube.com/watch?v=n1A_IjEf_hs&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=3)**
 
 ## 🎯 Learning Objectives
 

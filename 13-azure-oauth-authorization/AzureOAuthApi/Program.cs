@@ -1,3 +1,4 @@
+using Azure.Identity;
 using AzureOAuthApi;
 using AzureOAuthApi.Configuration;
 using AzureOAuthApi.Mappings;
@@ -5,6 +6,9 @@ using AzureOAuthApi.Repositories;
 using AzureOAuthApi.Services;
 using AzureOAuthApi.Handlers;
 using AzureOAuthApi.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,18 +34,55 @@ builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// ========================================
+// 🔐 Configure Azure AD Authentication
+// ========================================
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration);
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new() { Title = "Custom Middleware API", Version = "v1" });
+    options.SwaggerDoc("v1", new() { Title = "Azure OAuth API", Version = "v1" });
 
-    // Include XML comments if file exists
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
+    // 🔐 Add OAuth2 security definition (Authorization Code + PKCE)
+    var tenantId = builder.Configuration["AzureAd:TenantId"];
+    var clientId = builder.Configuration["AzureAd:ClientId"];
+
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
     {
-        options.IncludeXmlComments(xmlPath);
-    }
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
+                TokenUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
+                Scopes = new Dictionary<string, string>
+                {
+                    { $"api://{clientId}/Products.Read", "Read products" },
+                    { $"api://{clientId}/Products.Write", "Write products" }
+                }
+            }
+        }
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "oauth2"
+                }
+            },
+            [$"api://{clientId}/Products.Read"]
+        }
+    });
 });
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -81,16 +122,26 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.OAuthClientId(builder.Configuration["AzureAd:ClientId"]);
+        options.OAuthUsePkce(); // ← This enables PKCE in Swagger UI!
+        options.OAuthScopeSeparator(" ");
+    });
 }
 
 // 6. HTTPS Redirection
 app.UseHttpsRedirection();
 
-// 7. Authorization
-app.UseAuthorization();
+// ⚠️ ORDER MATTERS — Authentication before Authorization!
+app.UseAuthentication();   // ← ADD THIS
+app.UseAuthorization();    // ← already exists
 
 // 8. Endpoint Routing - maps controllers
 app.MapControllers();
 
 app.Run();
+
+//
+//api://48c34a32-dbc6-4a25-b36f-4de6c83f9a89

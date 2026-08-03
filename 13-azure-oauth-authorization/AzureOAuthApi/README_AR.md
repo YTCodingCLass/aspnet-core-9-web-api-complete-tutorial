@@ -1,743 +1,352 @@
-# التكوين ونمط Options في ASP.NET Core 9
+# المصادقة والتفويض باستخدام Azure OAuth في ASP.NET Core 9
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)
-![Configuration](https://img.shields.io/badge/Configuration-Options_Pattern-FF6B35?style=flat-square)
-![Settings](https://img.shields.io/badge/App-Settings-2E8B57?style=flat-square)
+![Authentication](https://img.shields.io/badge/Authentication-Microsoft_Identity_Web-0078D4?style=flat-square)
+![OAuth](https://img.shields.io/badge/OAuth_2.0-Authorization_Code_%2B_PKCE-EB5424?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد درس التكوين ونمط Options](https://youtu.be/YOUR_VIDEO_ID)**
+
+رابط فيديو التطبيق العملي للفصل 13 غير متوفر في المستودع حتى الآن.
+
+**متطلب سابق:** [شرح OAuth 2.0 Authorization Code Flow مع PKCE باستخدام المخططات](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)
+
+> يشرح الفيديو المرتبط مفاهيم OAuth الخاصة بالفصل 12، وليس فيديو تطبيق Azure العملي للفصل 13.
 
 ## 🎯 أهداف التعلم
 
-بنهاية هذا الدرس، ستتقن:
-- ✅ **نظام التكوين** - فهم التسلسل الهرمي للتكوين في ASP.NET Core
-- ✅ **نمط Options** - التكوين قوي النوع باستخدام `IOptions<T>`
-- ✅ **appsettings.json** - إدارة ملفات التكوين لبيئات مختلفة
-- ✅ **ربط التكوين** - ربط تكوين JSON بكلاسات C#
-- ✅ **Middleware قابل للتكوين** - جعل سلوك middleware قابل للتكوين
-- ✅ **إعدادات خاصة بالبيئة** - تكوين التطوير مقابل الإنتاج
-- ✅ **أفضل ممارسات التكوين** - إدارة تكوين آمنة وقابلة للصيانة
+بنهاية هذا الفصل، ستفهم كيفية:
+
+- إعداد ASP.NET Core Web API للتحقق من Access Tokens الصادرة عن Microsoft Entra ID.
+- تسجيل JWT bearer authentication باستخدام `Microsoft.Identity.Web`.
+- حماية Controller باستخدام `[Authorize]`.
+- وصف OAuth 2.0 Authorization Code flow في Swagger/OpenAPI.
+- استخدام PKCE من Swagger UI دون وضع Client Secret داخل المتصفح.
+- إظهار النطاقين `Products.Read` و`Products.Write` في نافذة التفويض داخل Swagger.
+- وضع `UseAuthentication()` قبل `UseAuthorization()` في مسار الطلب.
+- إبقاء Tenant IDs وClient IDs والأسرار خارج التوثيق وإعدادات الإنتاج المتعقبة.
 
 ## 🚀 ما نبنيه
 
-**نظام تكوين جاهز للإنتاج** يتميز بـ:
+يؤمّن هذا الفصل Products API الموروث باستخدام Microsoft Entra ID:
 
-1. **RequestResponseLoggingOptions** - كلاس تكوين قوي النوع
-2. **Middleware قابل للتكوين** - Middleware يقرأ الإعدادات من appsettings.json
-3. **تكوين خاص بالبيئة** - إعدادات مختلفة للتطوير والإنتاج
-4. **تنفيذ نمط Options** - حقن التبعية لإعدادات التكوين
+1. يتحقق API من bearer tokens باستخدام قسم الإعدادات `AzureAd`.
+2. تتطلب جميع Actions في `ProductsController` مستخدماً جرت مصادقته.
+3. يبدأ Swagger UI تدفق OAuth 2.0 Authorization Code ويستخدم PKCE.
+4. يعرض Swagger الصلاحيتين `Products.Read` و`Products.Write`.
+5. تحصل الطلبات التي لا تحمل Access Token صالحاً على `401 Unauthorized`.
+
+أما أكواد Repository وService وDTO وAutoMapper ومعالجة الاستثناءات وCustom Middleware والبيانات داخل الذاكرة وOptions Pattern فهي موروثة من الفصل 11.
 
 ## 📁 هيكل المشروع
 
-```
+```text
 AzureOAuthApi/
 ├── Controllers/
-│   └── ProductsController.cs        # نقاط نهاية API
-├── Configuration/                    # ⭐ كلاسات التكوين
-│   └── RequestResponseLoggingOptions.cs # كلاس options قوي النوع ⭐
-├── Middleware/                       # مكونات middleware مخصصة
-│   ├── RequestLoggingMiddleware.cs  # تسجيل طلبات واستجابات HTTP
-│   ├── ResponseTimingMiddleware.cs  # قياس وتسجيل وقت الاستجابة
-│   └── RequestResponseLoggingMiddleware.cs # middleware تسجيل قابل للتكوين ⭐
-├── Exceptions/                       # أنواع الاستثناءات المخصصة
-│   ├── BaseException.cs             # الاستثناء الأساسي مع كود الحالة
-│   ├── NotFoundException.cs         # 404 غير موجود
-│   ├── BadRequestException.cs       # 400 طلب خاطئ
-│   ├── ValidationException.cs       # 422 كيان غير قابل للمعالجة
-│   ├── UnauthorizedException.cs     # 401 غير مصرح
-│   ├── ForbiddenException.cs        # 403 محظور
-│   └── ConflictException.cs         # 409 تعارض
-├── Handlers/                         # معالجات الاستثناءات
-│   ├── GlobalExceptionHandler.cs    # يلتقط جميع الاستثناءات غير المعالجة
-│   ├── BusinessExceptionHandler.cs  # يتعامل مع استثناءات الأعمال
-│   └── ValidationExceptionHandler.cs # يتعامل مع أخطاء التحقق
-├── Models/
-│   ├── Product.cs                   # كيان المنتج
-│   ├── Supplier.cs                  # كيان المورد
-│   └── DTOs/
-│       └── ProductDtos.cs           # DTOs المنتج
-├── Repositories/
-│   ├── IProductRepository.cs        # واجهة المستودع
-│   └── ProductRepository.cs         # تنفيذ المستودع
-├── Services/
-│   ├── IProductService.cs           # واجهة الخدمة
-│   ├── ProductService.cs            # الخدمة مع منطق التحقق
-│   ├── INotificationService.cs      # واجهة خدمة الإشعارات
-│   └── NotificationService.cs       # تنفيذ الإشعارات
+│   └── ProductsController.cs          # ⭐ يحمي [Authorize] جميع Actions
+├── Configuration/
+│   └── RequestResponseLoggingOptions.cs # Options Pattern موروث
 ├── Data/
-│   └── InMemoryDatabase.cs          # مخزن بيانات في الذاكرة
+│   └── InMemoryDatabase.cs            # بيانات موروثة داخل الذاكرة
+├── Exceptions/                        # استثناءات مخصصة موروثة
+├── Handlers/                          # معالجات استثناءات موروثة
 ├── Mappings/
-│   └── MappingProfile.cs            # تكوين AutoMapper
-├── Program.cs                       # إعداد التكوين و DI ⭐
-├── appsettings.json                 # ملف التكوين الأساسي ⭐
-├── appsettings.Development.json     # إعدادات خاصة بالتطوير ⭐
-└── AzureOAuthApi.http     # طلبات HTTP للاختبار
+│   └── MappingProfile.cs              # AutoMapper profile موروث
+├── Middleware/                        # Custom middleware موروث
+├── Models/                            # Models وDTOs الخاصة بالمنتجات
+├── Repositories/                      # طبقة Repository موروثة
+├── Services/                          # طبقة Service موروثة
+├── Properties/
+│   └── launchSettings.json            # Launch profiles محلية
+├── AzureOAuthApi.csproj               # ⭐ حزم Identity ودعم user secrets
+├── Program.cs                         # ⭐ المصادقة والتفويض وSwagger OAuth
+├── appsettings.json                   # إعدادات مشتركة غير حساسة
+└── appsettings.Development.json       # ⭐ بنية إعدادات AzureAd
 ```
 
-## 🏗️ بنية نظام التكوين
+> لا يحتوي هذا الفصل على ملف طلبات `.http`.
 
-### **تدفق التسلسل الهرمي للتكوين**
+## 🆕 ما الجديد مقارنة بالفصل 11
 
-```
-┌─────────────────────────────────────────────────────┐
-│          مصادر التكوين (الأولوية)                  │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  1. appsettings.json (التكوين الأساسي)             │
-│     • إعدادات مشتركة لجميع البيئات                 │
-│     • القيم الافتراضية                             │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  2. appsettings.{Environment}.json                  │
-│     • تجاوزات خاصة بالبيئة                         │
-│     • Development, Staging, Production              │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  3. متغيرات البيئة (أعلى أولوية)                   │
-│     • تكوين الحاويات/السحابة                       │
-│     • الأسرار والبيانات الحساسة                    │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│           Configuration Builder                     │
-│     • يدمج جميع المصادر                            │
-│     • المصادر اللاحقة تتجاوز المصادر السابقة       │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│         نمط Options (IOptions<T>)                   │
-│     • كلاسات تكوين قوية النوع                      │
-│     • حقن التبعية                                  │
-│     • وصول آمن من حيث النوع للإعدادات              │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│        مكونات التطبيق                              │
-│     • Middleware                                    │
-│     • الخدمات                                      │
-│     • الكونترولرز                                  │
-└─────────────────────────────────────────────────────┘
+الفصل 11 (`ConfigurationOptionsApi`) هو آخر مشروع قابل للتشغيل قبل هذا الفصل. يحتوي الفصل 12 على مخططات ونظرية OAuth فقط، ولذلك نستخدمه كسياق مفاهيمي لا كأساس لمقارنة الكود.
+
+| الجانب | الفصل 11 | الفصل 13 |
+|---|---|---|
+| Authentication | غير معدّة | JWT bearer authentication عبر `Microsoft.Identity.Web` |
+| خدمات Authorization | استدعاء Middleware موجود فقط | تسجيل `AddAuthorization()` بشكل صريح |
+| حماية Controller | نقاط نهاية المنتجات متاحة دون مصادقة | يحمي `[Authorize]` الـController بالكامل |
+| Swagger | Swagger UI أساسي | OAuth 2.0 Authorization Code flow مع PKCE |
+| Scopes التي يعرضها Swagger | لا يوجد | `Products.Read` و`Products.Write` |
+| مسار Middleware | `UseAuthorization()` | `UseAuthentication()` قبل `UseAuthorization()` |
+| إعدادات Identity | لا يوجد | قسم `AzureAd` في إعدادات Development |
+| البنية الحالية | Repository وService وMiddleware والاستثناءات وOptions Pattern | موروثة دون إضافة طبقة معمارية جديدة |
+
+## 🏗️ تدفق طلب المصادقة
+
+```text
+User
+  │
+  │ 1. يضغط Authorize في Swagger UI
+  ▼
+Microsoft Entra ID /authorize endpoint
+  │
+  │ 2. يعود Authorization code إلى Swagger UI
+  ▼
+Swagger UI + PKCE
+  │
+  │ 3. يستبدل Code وVerifier عبر /token
+  │ 4. يرسل Authorization: Bearer <access_token>
+  ▼
+UseAuthentication()
+  │  يتحقق من Token وينشئ المستخدم الذي جرت مصادقته
+  ▼
+UseAuthorization()
+  │  يقيّم [Authorize]
+  ▼
+ProductsController → ProductService → ProductRepository → InMemoryDatabase
 ```
 
-## 💻 تنفيذ التكوين
+تجيب Authentication عن سؤال «من المتصل؟»، بينما تجيب Authorization عن سؤال «هل يُسمح لهذا المتصل بالوصول إلى Endpoint؟». نحتاج إلى الاثنتين، كما أن ترتيب Middleware مهم.
 
-### **الخطوة 1: إنشاء كلاس Options قوي النوع**
+## 💻 التطبيق خطوة بخطوة
 
-```csharp
-// Configuration/RequestResponseLoggingOptions.cs
-namespace AzureOAuthApi.Configuration;
+### الخطوة 1: إضافة حزم Identity
 
-/// <summary>
-/// خيارات التكوين لـ RequestResponseLoggingMiddleware.
-/// يوضح نمط Options لجعل middleware قابل للتكوين.
-/// </summary>
-public class RequestResponseLoggingOptions
-{
-    /// <summary>
-    /// اسم قسم التكوين في appsettings.json
-    /// </summary>
-    public const string SectionName = "RequestResponseLogging";
+يستهدف `AzureOAuthApi.csproj` الإصدار .NET 9 ويتضمن الحزم الخاصة بهذا الفصل:
 
-    /// <summary>
-    /// تفعيل أو تعطيل تسجيل تفصيلي للطلبات/الاستجابات
-    /// </summary>
-    public bool IsEnabled { get; set; } = false;
-
-    /// <summary>
-    /// تضمين headers الطلب في السجلات
-    /// </summary>
-    public bool IncludeRequestHeaders { get; set; } = false;
-
-    /// <summary>
-    /// تضمين headers الاستجابة في السجلات
-    /// </summary>
-    public bool IncludeResponseHeaders { get; set; } = false;
-
-    /// <summary>
-    /// تضمين محتوى الطلب في السجلات
-    /// </summary>
-    public bool IncludeRequestBody { get; set; } = true;
-
-    /// <summary>
-    /// تضمين محتوى الاستجابة في السجلات
-    /// </summary>
-    public bool IncludeResponseBody { get; set; } = true;
-
-    /// <summary>
-    /// الحد الأقصى لحجم المحتوى للتسجيل (بالبايت). المحتويات الأكبر ستُقتطع.
-    /// </summary>
-    public int MaxBodySizeToLog { get; set; } = 4096;
-}
+```xml
+<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.0" />
+<PackageReference Include="Azure.Identity" Version="1.21.0" />
+<PackageReference Include="Microsoft.Identity.Web" Version="4.7.0" />
 ```
 
-**المفاهيم الرئيسية:**
-- **ثابت SectionName** - يحدد اسم قسم التكوين
-- **القيم الافتراضية** - يوفر قيم افتراضية معقولة لجميع الخصائص
-- **توثيق XML** - أوصاف واضحة لكل إعداد
-- **أمان النوع** - خصائص قوية النوع بدلاً من السلاسل النصية السحرية
+تُستخدم `Microsoft.Identity.Web` فعلياً لإعداد التحقق من bearer token. أما حزمتا Azure فمثبتتان، لكن `Program.cs` الحالي لا يربط التطبيق بـAzure Key Vault.
 
----
+يحتوي المشروع أيضاً على `UserSecretsId` لتفعيل التخزين المحلي عبر user secrets، وقد حُذفت قيمته الخاصة بالجهاز من هذا التوثيق عمداً.
 
-### **الخطوة 2: تعريف التكوين في appsettings.json**
+### الخطوة 2: تعريف بنية إعدادات `AzureAd`
+
+يقرأ التطبيق الحالي إعدادات Identity من `AzureAd`. استخدم قيماً بديلة واضحة في التوثيق وSource Control المشتركين:
 
 ```json
-// appsettings.json - التكوين الأساسي
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "RequestResponseLogging": {
-    "IsEnabled": true,
-    "IncludeRequestHeaders": false,
-    "IncludeResponseHeaders": false,
-    "IncludeRequestBody": true,
-    "IncludeResponseBody": true,
-    "MaxBodySizeToLog": 4096
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "YOUR_TENANT_ID",
+    "ClientId": "YOUR_CLIENT_ID",
+    "ClientSecret": "",
+    "Scopes": "Products.Read Products.Write"
   }
 }
 ```
 
-```json
-// appsettings.Development.json - تجاوزات التطوير
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information"
-    }
-  },
-  "RequestResponseLogging": {
-    "IsEnabled": true,
-    "IncludeRequestHeaders": true,
-    "IncludeResponseHeaders": true,
-    "IncludeRequestBody": true,
-    "IncludeResponseBody": true,
-    "MaxBodySizeToLog": 8192
-  }
-}
-```
+- يحدد `TenantId` مستأجر Microsoft Entra.
+- يحدد `ClientId` تسجيل التطبيق المستخدم في هذا الدرس.
+- يجب إنشاء `Products.Read` و`Products.Write` ضمن **Expose an API** في Microsoft Entra ID.
+- يبني الكود الحالي عناوين Scopes بالشكل `api://YOUR_CLIENT_ID/Products.Read` و`api://YOUR_CLIENT_ID/Products.Write`.
+- يستخدم Swagger تدفق Authorization Code مع PKCE، لذلك لا تضع Client Secret داخل Swagger UI أو JSON متعقب.
 
-```json
-// appsettings.Production.json - تجاوزات الإنتاج
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "RequestResponseLogging": {
-    "IsEnabled": false,
-    "IncludeRequestHeaders": false,
-    "IncludeResponseHeaders": false,
-    "IncludeRequestBody": false,
-    "IncludeResponseBody": false,
-    "MaxBodySizeToLog": 2048
-  }
-}
-```
+### الخطوة 3: تسجيل Authentication وAuthorization
 
-**المفاهيم الرئيسية:**
-- **تكوين هرمي** - إعدادات أساسية مع تجاوزات البيئة
-- **بنية JSON** - تطابق أسماء خصائص كلاس C#
-- **خاص بالبيئة** - إعدادات مختلفة للتطوير مقابل الإنتاج
-- **الأمان** - تعطيل التسجيل المطول في الإنتاج
-
----
-
-### **الخطوة 3: تسجيل Options في Program.cs**
+يحدد `Program.cs` مخطط JWT bearer كمخطط Authentication افتراضي، ويربط Microsoft Identity Web بالإعدادات:
 
 ```csharp
-// Program.cs
-var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration);
 
-// ========================================
-// تكوين نمط Options
-// ========================================
-// ربط أقسام التكوين بكلاسات options قوية النوع
-// يوضح هذا نمط Options لـ middleware قابل للتكوين
-builder.Services.Configure<RequestResponseLoggingOptions>(
-    builder.Configuration.GetSection(RequestResponseLoggingOptions.SectionName));
-
-// تسجيلات خدمات أخرى...
-builder.Services.AddControllers();
-builder.Services.AddAutoMapper(typeof(MappingProfile));
-
-// تسجيل خدمات middleware
-builder.Services.AddScoped<RequestResponseLoggingMiddleware>();
-builder.Services.AddScoped<ResponseTimingMiddleware>();
-builder.Services.AddScoped<RequestLoggingMiddleware>();
-
-var app = builder.Build();
-
-// تكوين خط أنابيب middleware
-app.UseExceptionHandler();
-app.UseMiddleware<RequestResponseLoggingMiddleware>(); // يستخدم IOptions<T>
-app.UseMiddleware<ResponseTimingMiddleware>();
-app.UseMiddleware<RequestLoggingMiddleware>();
-
-app.Run();
+builder.Services.AddAuthorization();
 ```
 
-**المفاهيم الرئيسية:**
-- **Configure<T>()** - يسجل options مع حاوي DI
-- **GetSection()** - يسترجع قسم التكوين بالاسم
-- **قوة النوع** - يُربط التكوين بـ `RequestResponseLoggingOptions`
-- **حقن التبعية** - يُحقن Options في المكونات
+يقرأ `AddMicrosoftIdentityWebApi` قسم `AzureAd` الافتراضي ويعد التحقق من Access Token داخل API.
 
----
+### الخطوة 4: إعداد OAuth 2.0 Scopes في Swagger
 
-### **الخطوة 4: استهلاك Options في Middleware**
+يقرأ Swagger معرفي Tenant وClient، ثم يبني Endpoints الخاصة بمنصة Microsoft Identity بالإصدار v2.0:
 
 ```csharp
-// Middleware/RequestResponseLoggingMiddleware.cs
-using Microsoft.Extensions.Options;
+var tenantId = builder.Configuration["AzureAd:TenantId"];
+var clientId = builder.Configuration["AzureAd:ClientId"];
 
-public class RequestResponseLoggingMiddleware(
-    ILogger<RequestResponseLoggingMiddleware> logger,
-    IOptions<RequestResponseLoggingOptions> options)  // ⭐ حقن IOptions<T>
-    : IMiddleware
+options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
 {
-    private readonly RequestResponseLoggingOptions _options = options.Value; // ⭐ الحصول على القيمة
-
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    Type = SecuritySchemeType.OAuth2,
+    Flows = new OpenApiOAuthFlows
     {
-        // التحقق إذا كان التسجيل مفعلاً عبر التكوين
-        if (!_options.IsEnabled)
+        AuthorizationCode = new OpenApiOAuthFlow
         {
-            await next(context);
-            return;
-        }
-
-        // تسجيل الطلب
-        await LogRequest(context);
-
-        // نسخ stream الاستجابة الأصلي
-        var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
-        // تنفيذ middleware التالي
-        await next(context);
-
-        // تسجيل الاستجابة
-        await LogResponse(context);
-
-        // نسخ المحتويات إلى stream الأصلي
-        await responseBody.CopyToAsync(originalBodyStream);
-    }
-
-    private async Task LogRequest(HttpContext context)
-    {
-        var logBuilder = new StringBuilder();
-        logBuilder.AppendLine("معلومات طلب HTTP:");
-        logBuilder.AppendLine($"الطريقة: {context.Request.Method}");
-        logBuilder.AppendLine($"المسار: {context.Request.Path}");
-
-        // تضمين headers إذا تم تكوينها
-        if (_options.IncludeRequestHeaders)
-        {
-            logBuilder.AppendLine("Headers:");
-            foreach (var header in context.Request.Headers)
+            AuthorizationUrl = new Uri(
+                $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
+            TokenUrl = new Uri(
+                $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
+            Scopes = new Dictionary<string, string>
             {
-                logBuilder.AppendLine($"  {header.Key}: {header.Value}");
+                { $"api://{clientId}/Products.Read", "Read products" },
+                { $"api://{clientId}/Products.Write", "Write products" }
             }
         }
-
-        // تضمين المحتوى إذا تم تكوينه
-        if (_options.IncludeRequestBody)
-        {
-            context.Request.EnableBuffering();
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            context.Request.Body.Position = 0;
-
-            // القطع إذا تجاوز المحتوى الحد الأقصى
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [مُقتطع]";
-            }
-
-            logBuilder.AppendLine($"المحتوى: {body}");
-        }
-
-        logger.LogInformation(logBuilder.ToString());
     }
-
-    private async Task LogResponse(HttpContext context)
-    {
-        var logBuilder = new StringBuilder();
-        logBuilder.AppendLine("معلومات استجابة HTTP:");
-        logBuilder.AppendLine($"كود الحالة: {context.Response.StatusCode}");
-
-        // تضمين headers إذا تم تكوينها
-        if (_options.IncludeResponseHeaders)
-        {
-            logBuilder.AppendLine("Headers:");
-            foreach (var header in context.Response.Headers)
-            {
-                logBuilder.AppendLine($"  {header.Key}: {header.Value}");
-            }
-        }
-
-        // تضمين المحتوى إذا تم تكوينه
-        if (_options.IncludeResponseBody)
-        {
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-
-            // القطع إذا تجاوز المحتوى الحد الأقصى
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [مُقتطع]";
-            }
-
-            logBuilder.AppendLine($"المحتوى: {body}");
-        }
-
-        logger.LogInformation(logBuilder.ToString());
-    }
-}
+});
 ```
 
-**المفاهيم الرئيسية:**
-- **حقن IOptions<T>** - يُحقن Options عبر الـ constructor
-- **options.Value** - الوصول إلى الإعدادات المكونة
-- **سلوك مدفوع بالتكوين** - سلوك Middleware يتغير بناءً على الإعدادات
-- **تكوين وقت التشغيل** - لا حاجة لتغييرات كود لتعديل السلوك
-- **حد حجم المحتوى** - يمنع تسجيل أحمال ضخمة
-
----
-
-## 🎨 فوائد نمط Options
-
-### **قبل: تكوين ثابت في الكود** ❌
+يطلب OpenAPI security requirement النطاق `Products.Read` افتراضياً. بعد ذلك يمرر Swagger UI قيمة Client ID المعدة ويفعّل PKCE:
 
 ```csharp
-public class RequestResponseLoggingMiddleware : IMiddleware
+app.UseSwaggerUI(options =>
 {
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        // يسجل كل شيء دائماً - بدون مرونة
-        var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-        logger.LogInformation($"محتوى الطلب: {body}");
-
-        await next(context);
-    }
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+    options.OAuthClientId(builder.Configuration["AzureAd:ClientId"]);
+    options.OAuthUsePkce();
+    options.OAuthScopeSeparator(" ");
+});
 ```
 
-**المشاكل:**
-- ❌ لا يوجد طريقة لتعطيل التسجيل
-- ❌ يسجل المحتويات الكاملة دائماً (يمكن أن تكون ضخمة!)
-- ❌ لا يمكن تبديل headers تشغيل/إيقاف
-- ❌ يتطلب تغييرات كود لتعديل السلوك
+سجّل Swagger redirect URI الذي يطابق Profile المستخدم، مثلاً:
 
----
+```text
+http://localhost:5213/swagger/oauth2-redirect.html
+```
 
-### **بعد: نمط Options** ✅
+### الخطوة 5: حماية Products Controller
+
+تُطبّق `[Authorize]` على مستوى Controller، ولذلك تشمل GET وPOST وPUT وDELETE وbulk-create:
 
 ```csharp
-public class RequestResponseLoggingMiddleware(
-    ILogger<RequestResponseLoggingMiddleware> logger,
-    IOptions<RequestResponseLoggingOptions> options) : IMiddleware
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ProductsController(IProductService productService) : ControllerBase
 {
-    private readonly RequestResponseLoggingOptions _options = options.Value;
-
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        // التحقق إذا كان مفعلاً عبر التكوين
-        if (!_options.IsEnabled)
-        {
-            await next(context);
-            return;
-        }
-
-        // التسجيل فقط إذا تم تكوينه
-        if (_options.IncludeRequestBody)
-        {
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-
-            // القطع إذا لزم الأمر
-            if (body.Length > _options.MaxBodySizeToLog)
-            {
-                body = body.Substring(0, _options.MaxBodySizeToLog) + "... [مُقتطع]";
-            }
-
-            logger.LogInformation($"محتوى الطلب: {body}");
-        }
-
-        await next(context);
-    }
+    // All actions require an authenticated user.
 }
 ```
 
-**الفوائد:**
-- ✅ تفعيل/تعطيل عبر appsettings.json
-- ✅ حدود حجم المحتوى لمنع السجلات الضخمة
-- ✅ تبديل headers/المحتوى بشكل مستقل
-- ✅ تكوين خاص بالبيئة
-- ✅ لا حاجة لتغييرات كود
+مهم: يتحقق الدرس الحالي من وجود مستخدم جرت مصادقته فقط. يعرض Swagger النطاقين `Products.Read` و`Products.Write`، لكن الكود لا يستدعي `RequiredScope` ولا يعرّف Authorization policies ولا يطبق متطلبات Scopes مختلفة على Actions القراءة والكتابة. لذلك يستطيع Access Token صالح لمستخدم جرت مصادقته الوصول إلى جميع Actions في Controller. ويُعد فرض الصلاحيات الدقيقة حسب Scope خطوة منطقية تالية.
 
----
+### الخطوة 6: وضع Authentication قبل Authorization
 
-## 🔧 أنماط التكوين
-
-### **النمط 1: ربط تكوين بسيط**
+يحافظ مسار الطلب على Middleware الخاصة بالاستثناءات والتسجيل الموروثة، ثم يضيف Middleware الأمنية بهذا الترتيب:
 
 ```csharp
-// تسجيل options
-builder.Services.Configure<MyOptions>(
-    builder.Configuration.GetSection("MySection"));
+app.UseHttpsRedirection();
 
-// الاستهلاك في خدمة
-public class MyService(IOptions<MyOptions> options)
-{
-    private readonly MyOptions _options = options.Value;
-}
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 ```
 
-### **النمط 2: تكوين مع التحقق**
+يجب تشغيل `UseAuthentication()` أولاً حتى يتحقق من bearer token ويملأ `HttpContext.User` قبل أن تقيّم Authorization السمة `[Authorize]`.
 
-```csharp
-// كلاس options مع التحقق
-public class ApiKeyOptions
-{
-    public string ApiKey { get; set; } = string.Empty;
-}
+## 🔐 قائمة إعداد Microsoft Entra ID
 
-// التسجيل مع التحقق
-builder.Services.AddOptions<ApiKeyOptions>()
-    .Bind(builder.Configuration.GetSection("ApiKey"))
-    .Validate(options => !string.IsNullOrEmpty(options.ApiKey),
-              "مفتاح API مطلوب");
+قبل الاختبار عبر Swagger:
+
+1. أنشئ App Registration للـAPI أو اختر واحداً موجوداً.
+2. ضمن **Expose an API**، عيّن Application ID URI إلى `api://YOUR_CLIENT_ID`.
+3. أنشئ Delegated Scopes باسم `Products.Read` و`Products.Write`.
+4. أضف Platform redirect URI يطابق Swagger، مثل `http://localhost:5213/swagger/oauth2-redirect.html`.
+5. امنح Client الأذونات اللازمة للـScopes المكشوفة، وقدّم Consent إذا كان Tenant يتطلبه.
+6. مرّر Tenant ID وClient ID الصحيحين محلياً دون تثبيت المعرفات الحقيقية أو الأسرار في المستودع.
+
+يجب أن يتطابق App Registration مع عناوين Scopes وredirect URI الدقيقة التي يبنيها الكود.
+
+## 🔒 إعداد محلي آمن
+
+استخدم user secrets في التطوير المحلي بدلاً من تثبيت المعرفات الحقيقية داخل الملفات المتعقبة:
+
+```bash
+cd 13-azure-oauth-authorization/AzureOAuthApi
+dotnet user-secrets set "AzureAd:TenantId" "YOUR_TENANT_ID"
+dotnet user-secrets set "AzureAd:ClientId" "YOUR_CLIENT_ID"
 ```
 
-### **النمط 3: مصادر تكوين متعددة**
+تُعد Environment Variables مصدراً مدعوماً آخر للإعدادات:
 
-```csharp
-// بناء تكوين من مصادر متعددة
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json", optional: false)
-    .AddJsonFile($"appsettings.{environment}.json", optional: true)
-    .AddEnvironmentVariables()
-    .AddUserSecrets<Program>()  // أسرار التطوير
-    .Build();
+```bash
+AzureAd__TenantId=YOUR_TENANT_ID
+AzureAd__ClientId=YOUR_CLIENT_ID
 ```
 
-### **النمط 4: IOptionsSnapshot للتكوين القابل لإعادة التحميل**
+ملاحظات أمنية:
 
-```csharp
-// استخدام IOptionsSnapshot بدلاً من IOptions للتكوين القابل لإعادة التحميل
-public class MyService(IOptionsSnapshot<MyOptions> options)
-{
-    // يُعاد تقييم Options في كل طلب إذا تغير ملف التكوين
-    private MyOptions GetCurrentOptions() => options.Value;
-}
+- لا تثبّت Tenant IDs أو Client IDs أو Client Secrets أو Tokens أو أسماء Vault الحقيقية في توثيق الدرس.
+- يحمي PKCE عملية استبدال Authorization Code، لكنه لا يجعل المتصفح مكاناً آمناً لتخزين Client Secret.
+- تجنب تسجيل bearer tokens أو Authorization headers الحساسة.
+- على الرغم من وجود Dependencies الخاصة بـAzure Key Vault، فلن يصبح Key Vault فعالاً حتى يُضاف كود الإعداد بصورة مقصودة.
+
+## 🧪 اختبار API المحمي باستخدام Swagger
+
+### 1. تشغيل Development profile
+
+يتوفر Swagger في بيئة Development فقط. يستخدم Profile المسمى `http` بيئة Development ويستمع على المنفذ `5213`:
+
+```bash
+cd 13-azure-oauth-authorization/AzureOAuthApi
+dotnet run --launch-profile http
 ```
 
-## 🧪 اختبار التكوين
+افتح:
 
-### **اختبار قيم تكوين مختلفة**
+```text
+http://localhost:5213/swagger
+```
+
+يضبط Launch profile المسمى `https` حالياً قيمة `ASPNETCORE_ENVIRONMENT` إلى `Production`، لذلك لا يظهر Swagger عند استخدامه.
+
+### 2. التأكد من رفض الوصول دون مصادقة
+
+استدعِ `GET /api/Products` قبل تنفيذ Authorize.
+
+النتيجة المتوقعة:
 
 ```http
-### اختبار مع IsEnabled = true (الافتراضي)
-GET https://localhost:7xxx/api/products
+HTTP/1.1 401 Unauthorized
 ```
 
-**المتوقع:** تسجيل كامل للطلب/الاستجابة في وحدة التحكم
+### 3. تنفيذ Authorization عبر Microsoft Entra ID
 
----
+1. اضغط **Authorize** في Swagger UI.
+2. اختر Scope أو Scopes المتاحة.
+3. سجّل الدخول بحساب مسموح له داخل Tenant.
+4. أكمل Consent إذا طُلب.
+5. استدعِ `GET /api/Products` مرة أخرى.
 
-```http
-### تغيير appsettings.json: IsEnabled = false
-GET https://localhost:7xxx/api/products
-```
+عند استخدام Access Token صالح لهذا API، تعيد Endpoint النتيجة `200 OK` وبيانات المنتجات المخزنة في الذاكرة. يمنع Token منتهي الصلاحية أو تالف، أو Tenant خاطئ، أو Audience خاطئ، أو عدم تطابق Scope URI أو redirect URI نجاح الاختبار.
 
-**المتوقع:** لا يوجد تسجيل تفصيلي
-
----
-
-```http
-### تغيير IncludeRequestHeaders = true
-POST https://localhost:7xxx/api/products
-Content-Type: application/json
-
-{
-  "name": "منتج تجريبي",
-  "price": 99.99
-}
-```
-
-**المتوقع:** تضمين Headers في السجلات
-
----
-
-## 🎓 الفوائد الرئيسية
-
-### **1. أمان النوع**
-- ✅ كلاسات تكوين قوية النوع
-- ✅ فحص وقت الترجمة
-- ✅ دعم IntelliSense
-- ✅ أمان إعادة البناء
-
-### **2. قابلية الصيانة**
-- ✅ تكوين مركزي
-- ✅ بنية واضحة مع توثيق XML
-- ✅ قيم افتراضية في الكود
-- ✅ سهل الفهم والتعديل
-
-### **3. إدارة البيئة**
-- ✅ إعدادات أساسية مع تجاوزات
-- ✅ تكوينات التطوير مقابل الإنتاج
-- ✅ جاهز للحاويات/السحابة
-- ✅ دعم إدارة الأسرار
-
-### **4. المرونة**
-- ✅ تغيير السلوك بدون تغييرات كود
-- ✅ تبديل الميزات تشغيل/إيقاف
-- ✅ ضبط الحدود والعتبات
-- ✅ تحديثات تكوين وقت التشغيل (مع IOptionsSnapshot)
-
-### **5. قابلية الاختبار**
-- ✅ سهل محاكاة IOptions<T>
-- ✅ حقن تكوينات اختبار
-- ✅ اختبار الوحدة مع إعدادات مختلفة
-- ✅ تكوينات بيئة اختبار التكامل
-
----
-
-## 🔧 تشغيل المشروع
+## ▶️ البناء والتشغيل
 
 ```bash
 cd 13-azure-oauth-authorization/AzureOAuthApi
 dotnet restore
-dotnet run
+dotnet build
+dotnet run --launch-profile http
 ```
 
-**Swagger UI**: `https://localhost:7xxx/swagger`
-**Products API**: `https://localhost:7xxx/api/products`
+يستهدف المشروع .NET 9، لذلك ثبّت .NET 9 SDK قبل تشغيل هذه الأوامر.
 
-### **اختبار بيئات مختلفة**
+## 🛠️ استكشاف الأخطاء وإصلاحها
 
-```bash
-# التشغيل مع بيئة التطوير (يستخدم appsettings.Development.json)
-dotnet run --environment Development
+| العَرَض | ما يجب التحقق منه |
+|---|---|
+| Swagger غير ظاهر | شغّل Profile المسمى `http` أواضبط البيئة إلى Development بطريقة أخرى |
+| ظهور `401 Unauthorized` بعد تسجيل الدخول | تحقق من Tenant وAudience/Client ID وانتهاء Token، ومن إرسال Swagger للـbearer token |
+| خطأ redirect من نوع `AADSTS50011` | سجّل Swagger OAuth redirect URI الدقيق |
+| Scope غير ظاهر | اكشف `Products.Read` و`Products.Write` باستخدام Application ID URI المطابق تماماً |
+| نجاح Authorization مع بقاء عمليات الكتابة متاحة | يستخدم هذا الفصل `[Authorize]` فقط، ولم يُطبق فرض Scope حسب Action بعد |
+| إعدادات Key Vault بلا تأثير | الحزم مثبتة، لكن التطبيق الحالي لا يضيف Key Vault كمصدر إعدادات |
 
-# التشغيل مع بيئة الإنتاج (يستخدم appsettings.Production.json)
-dotnet run --environment Production
+## ✅ الخلاصات الرئيسية
 
-# التشغيل مع بيئة مخصصة
-dotnet run --environment Staging
-```
+- تدمج `Microsoft.Identity.Web` التحقق من Tokens الصادرة عن Microsoft Entra ID مع JWT bearer authentication في ASP.NET Core.
+- تجعل `[Authorize]` كل Actions داخل `ProductsController` تتطلب مستخدماً جرت مصادقته.
+- يستطيع Swagger توضيح Authorization Code flow بصورة آمنة باستخدام PKCE.
+- عرض Scopes في Swagger لا يفرض الصلاحيات وحده.
+- يجب أن يسبق `UseAuthentication()` الاستدعاء `UseAuthorization()`.
+- يحتفظ الفصل 13 ببنية تطبيق الفصل 11 ويضيف حولها حداً أمنياً.
+- تنتمي المعرفات الحساسة إلى user secrets أو Environment Variables أو إعدادات Cloud مُدارة أو Secret Store أُعد بصورة مقصودة، وليس إلى ملفات الدرس المتعقبة.
 
----
+## 🚀 الخطوات التالية
 
-## 🎯 النقاط الرئيسية
-
-1. **نمط Options**: استخدم `IOptions<T>` للتكوين قوي النوع
-2. **التسلسل الهرمي للتكوين**: appsettings.json → appsettings.{Environment}.json → متغيرات البيئة
-3. **أمان النوع**: كلاسات التكوين توفر فحص وقت الترجمة
-4. **خاص بالبيئة**: إعدادات مختلفة للتطوير والمرحلة والإنتاج
-5. **حقن التبعية**: يُحقن Options في الخدمات و middleware
-6. **تكوين قابل لإعادة التحميل**: استخدم `IOptionsSnapshot<T>` للتكوينات التي تتغير وقت التشغيل
-7. **التحقق**: أضف التحقق من التكوين للإعدادات الحرجة
-8. **الأمان**: احفظ الأسرار في متغيرات البيئة أو Key Vault، وليس في appsettings.json
-
----
-
-## 🔒 أفضل ممارسات أمان التكوين
-
-### **❌ لا تحفظ الأسرار أبداً في appsettings.json**
-
-```json
-// لا تفعل هذا!
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=prod;Database=MyDb;User=admin;Password=Pa$$w0rd123"
-  },
-  "ApiKeys": {
-    "PaymentGateway": "sk_live_abc123xyz789"
-  }
-}
-```
-
-### **✅ استخدم متغيرات البيئة أو مديري الأسرار**
-
-```csharp
-// التطوير: User Secrets
-dotnet user-secrets init
-dotnet user-secrets set "ApiKeys:PaymentGateway" "sk_test_abc123"
-
-// الإنتاج: متغيرات البيئة
-// عيّن في Azure App Service، Kubernetes، Docker، إلخ
-export ApiKeys__PaymentGateway="sk_live_xyz789"
-```
-
-```csharp
-// الوصول إلى الأسرار بنفس طريقة التكوين العادي
-builder.Services.Configure<ApiKeyOptions>(
-    builder.Configuration.GetSection("ApiKeys"));
-```
-
----
-
-## ➡️ ماذا بعد؟
-
-**توسيع نظام التكوين هذا بـ:**
-- **Azure Key Vault** - حفظ الأسرار في Azure Key Vault
-- **التحقق من التكوين** - التحقق من الإعدادات عند بدء التشغيل
-- **IOptionsSnapshot** - تكوين قابل لإعادة التحميل بدون إعادة تشغيل
-- **IOptionsMonitor** - تتبع تغييرات التكوين مع callbacks
-- **مزودي تكوين مخصصين** - تحميل التكوين من قاعدة بيانات، APIs، إلخ
-- **أعلام الميزات** - تبديل الميزات ديناميكياً
-- **تشفير التكوين** - تشفير أقسام حساسة
-
----
-
-## 💡 نصائح احترافية
-
-1. **استخدم const لأسماء الأقسام** - يمنع الأخطاء المطبعية ويمكّن إعادة البناء
-   ```csharp
-   public const string SectionName = "RequestResponseLogging";
-   ```
-
-2. **وفر قيم افتراضية** - ابدأ الخصائص بقيم افتراضية معقولة
-   ```csharp
-   public bool IsEnabled { get; set; } = false;
-   ```
-
-3. **وثّق التكوين** - استخدم تعليقات XML لجميع options
-   ```csharp
-   /// <summary>
-   /// الحد الأقصى لحجم المحتوى للتسجيل (بالبايت)
-   /// </summary>
-   public int MaxBodySizeToLog { get; set; } = 4096;
-   ```
-
-4. **تحقق من التكوين** - أضف التحقق عند بدء التشغيل للإعدادات الحرجة
-   ```csharp
-   builder.Services.AddOptions<MyOptions>()
-       .Validate(o => o.MaxSize > 0, "MaxSize يجب أن يكون موجباً");
-   ```
-
-5. **تكوينات خاصة بالبيئة** - استخدم إعدادات مختلفة لكل بيئة
-   - التطوير: تسجيل مطول، وضع التصحيح
-   - الإنتاج: تسجيل أدنى، إعدادات محسّنة
-
----
-
-**💡 نصيحة احترافية**: نمط Options هو الطريقة الموصى بها للوصول إلى التكوين في ASP.NET Core. يوفر أمان النوع وحقن التبعية والمرونة دون التضحية بالأداء!
+- فرض `Products.Read` على GET Actions و`Products.Write` على Actions التي تغيّر البيانات.
+- إضافة Role-based أو Policy-based authorization عندما يتطلب Domain ذلك.
+- إضافة Integration Tests آلية للطلبات دون مصادقة، ولـTokens غير الصالحة، وللطلبات المصرح بها.
+- إعداد Azure Key Vault فقط عندما يقدمه الدرس عمداً وتتوفر استراتيجية Credentials مناسبة.
