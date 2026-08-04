@@ -4,7 +4,7 @@
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-9.0-512BD4?style=flat-square&logo=dotnet)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 01: المقدمة والإعداد](https://www.youtube.com/watch?v=BEG49WICGEo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=9)**
+**🔗 [شاهد الفصل 01: المقدمة والإعداد](https://www.youtube.com/watch?v=BEG49WICGEo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=13)**
 
 ## 🎯 أهداف التعلم
 

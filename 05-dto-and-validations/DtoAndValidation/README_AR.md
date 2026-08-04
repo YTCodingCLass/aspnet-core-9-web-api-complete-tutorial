@@ -4,7 +4,7 @@
 ![Validation](https://img.shields.io/badge/Validation-DataAnnotations-4CAF50?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 05: DTOs والتحقق](https://www.youtube.com/watch?v=zwp3Qvxxzgc&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=5)**
+**🔗 [شاهد الفصل 05: DTOs والتحقق](https://www.youtube.com/watch?v=zwp3Qvxxzgc&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=9)**
 
 ## 🎯 أهداف التعلم
 

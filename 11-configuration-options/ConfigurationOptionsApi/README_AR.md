@@ -5,7 +5,7 @@
 ![Settings](https://img.shields.io/badge/App-Settings-2E8B57?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد درس التكوين ونمط Options](https://youtu.be/YOUR_VIDEO_ID)**
+**🔗 [شاهد درس التكوين ونمط Options](https://www.youtube.com/watch?v=S3ygXq94dLo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=3)**
 
 ## 🎯 أهداف التعلم
 

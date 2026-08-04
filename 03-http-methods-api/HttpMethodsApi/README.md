@@ -4,7 +4,7 @@
 ![REST](https://img.shields.io/badge/REST-API-009688?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Chapter 03: HTTP Methods Development](https://www.youtube.com/watch?v=4BQniKV0zjg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=10)**
+**🔗 [Watch Chapter 03: HTTP Methods Development](https://www.youtube.com/watch?v=4BQniKV0zjg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=11)**
 
 ## 🚧 Work in Progress
 

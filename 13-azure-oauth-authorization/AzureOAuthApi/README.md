@@ -6,11 +6,11 @@
 
 ## 📺 YouTube Video
 
-The chapter 13 implementation video link is not available in the repository yet.
+**🔗 [Watch Chapter 13: Azure AD OAuth 2.0](https://www.youtube.com/watch?v=rC2Yx56p1dg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)**
 
-**Prerequisite:** [OAuth 2.0 Authorization Code Flow with PKCE — diagram explanation](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)
+**Prerequisite:** [OAuth 2.0 Authorization Code Flow with PKCE — diagram explanation](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=2)
 
-> The linked video explains the chapter 12 OAuth concepts. It is not the chapter 13 Azure implementation video.
+> Watch the chapter 12 diagram lesson first for the OAuth concepts, then continue with the chapter 13 Azure implementation video.
 
 ## 🎯 Learning Objectives
 

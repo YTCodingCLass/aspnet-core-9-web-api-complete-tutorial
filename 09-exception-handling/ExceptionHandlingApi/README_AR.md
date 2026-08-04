@@ -5,7 +5,7 @@
 ![RFC 7807](https://img.shields.io/badge/RFC_7807-Problem_Details-2E8B57?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد درس معالجة الاستثناءات الشاملة](https://www.youtube.com/watch?v=Efmvo90NuiA&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)**
+**🔗 [شاهد درس معالجة الاستثناءات الشاملة](https://www.youtube.com/watch?v=Efmvo90NuiA&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=5)**
 
 ## 🎯 أهداف التعلم
 

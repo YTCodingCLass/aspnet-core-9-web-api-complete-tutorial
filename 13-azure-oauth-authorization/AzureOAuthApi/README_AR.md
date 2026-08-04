@@ -6,11 +6,11 @@
 
 ## 📺 فيديو يوتيوب
 
-رابط فيديو التطبيق العملي للفصل 13 غير متوفر في المستودع حتى الآن.
+**🔗 [شاهد الفصل 13: Azure AD OAuth 2.0](https://www.youtube.com/watch?v=rC2Yx56p1dg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)**
 
-**متطلب سابق:** [شرح OAuth 2.0 Authorization Code Flow مع PKCE باستخدام المخططات](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1)
+**متطلب سابق:** [شرح OAuth 2.0 Authorization Code Flow مع PKCE باستخدام المخططات](https://www.youtube.com/watch?v=s7CHVYNX1C8&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=2)
 
-> يشرح الفيديو المرتبط مفاهيم OAuth الخاصة بالفصل 12، وليس فيديو تطبيق Azure العملي للفصل 13.
+> شاهد أولاً درس الفصل 12 بالمخططات لفهم مفاهيم OAuth، ثم تابع فيديو التطبيق العملي باستخدام Azure في الفصل 13.
 
 ## 🎯 أهداف التعلم
 

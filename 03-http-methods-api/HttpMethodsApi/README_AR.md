@@ -4,7 +4,7 @@
 ![REST](https://img.shields.io/badge/REST-API-009688?style=flat-square)
 
 ## 📺 فيديو يوتيوب
-**🔗 [شاهد الفصل 03: تطوير HTTP Methods](https://www.youtube.com/watch?v=4BQniKV0zjg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=7)**
+**🔗 [شاهد الفصل 03: تطوير HTTP Methods](https://www.youtube.com/watch?v=4BQniKV0zjg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=11)**
 
 ## 🚧 قيد التطوير
 

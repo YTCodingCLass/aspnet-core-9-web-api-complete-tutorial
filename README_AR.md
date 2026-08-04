@@ -14,6 +14,8 @@
 
 **🔗 [شاهد القائمة الكاملة على يوتيوب](https://www.youtube.com/playlist?list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA)**
 
+**🆕 أحدث فيديو:** [#13 [Arabic] Azure AD OAuth 2.0 في ASP.NET Core 9 | حماية Web API باستخدام JWT وPKCE](https://www.youtube.com/watch?v=rC2Yx56p1dg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1) — ⏱️ 16:26
+
 ## 📚 هيكل الدروس
 
 | الفصل | الموضوع | المفاهيم الأساسية | المدة |
@@ -24,11 +26,12 @@
 | **04** | [HTTP Methods API](./04-http-methods-api/) | PUT, PATCH, DELETE، رموز الحالة | ⏱️ ~20 دقيقة |
 | **05** | [DTOs والتحقق](./05-dto-and-validations/) | كائنات نقل البيانات، ModelState | ⏱️ ~22 دقيقة |
 | **06** | [تكامل AutoMapper](./06-automapper/) | ربط الكائنات، معمارية نظيفة | ⏱️ ~23 دقيقة |
-| **07** | [حقن التبعية](./07-dependency-injection/) | دورات حياة الخدمات: Singleton, Scoped, Transient | ⏱️ ~16 دقيقة |
-| **08** | [نمط Repository والخدمات](./08-repository-and-services/) | نمط Repository، طبقة الخدمات، المعمارية النظيفة | ⏱️ ~8 دقائق |
-| **09** | [معالجة الاستثناءات الشاملة](./09-exception-handling/) | IExceptionHandler، RFC 7807، استثناءات مخصصة | ⏱️ ~22 دقيقة |
-| **10** | [Custom Middleware](./10-custom-middleware/) | واجهة IMiddleware، خط أنابيب الطلبات، مراقبة الأداء | ⏱️ ~TBD |
-| **11** | [التكوين ونمط Options](./11-configuration-options/) | IOptions<T>، appsettings.json، إعدادات خاصة بالبيئة | ⏱️ ~TBD |
+| **07** | [حقن التبعية](./07-dependency-injection/) | دورات حياة الخدمات: Singleton, Scoped, Transient | ⏱️ ~15 دقيقة |
+| **08** | [نمط Repository والخدمات](./08-repository-and-services/) | نمط Repository، طبقة الخدمات، المعمارية النظيفة | ⏱️ ~7 دقائق |
+| **09** | [معالجة الاستثناءات الشاملة](./09-exception-handling/) | IExceptionHandler، RFC 7807، استثناءات مخصصة | ⏱️ ~21 دقيقة |
+| **10** | [Custom Middleware](./10-custom-middleware/) | واجهة IMiddleware، خط أنابيب الطلبات، مراقبة الأداء | ⏱️ ~7 دقائق |
+| **11** | [التكوين ونمط Options](./11-configuration-options/) | IOptions<T>، appsettings.json، إعدادات خاصة بالبيئة | ⏱️ ~13 دقيقة |
+| **13** | [تفويض Azure OAuth](./13-azure-oauth-authorization/) | OAuth 2.0 Authorization Code Flow مع PKCE | ⏱️ ~16 دقيقة |
 
 ## 🎯 ما ستتعلمه
 

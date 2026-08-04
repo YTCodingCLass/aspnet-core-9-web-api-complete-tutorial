@@ -5,7 +5,7 @@
 ![Service Layer](https://img.shields.io/badge/Service_Layer-Business_Logic-2E8B57?style=flat-square)
 
 ## 📺 YouTube Video
-**🔗 [Watch Repository and Service Pattern Tutorial](https://www.youtube.com/watch?v=ZoW5RnvgeSo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=5)**
+**🔗 [Watch Repository and Service Pattern Tutorial](https://www.youtube.com/watch?v=ZoW5RnvgeSo&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=6)**
 
 ## 🎯 Learning Objectives
 

@@ -14,6 +14,8 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 
 **🔗 [Watch the Full Playlist on YouTube](https://www.youtube.com/playlist?list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA)**
 
+**🆕 Latest video:** [#13 [Arabic] Azure AD OAuth 2.0 في ASP.NET Core 9 | حماية Web API باستخدام JWT وPKCE](https://www.youtube.com/watch?v=rC2Yx56p1dg&list=PL7RnrrCfV_JdYXcg1lhvEDTYuJeVXBJfA&index=1) — ⏱️ 16:26
+
 ## 📚 Tutorial Structure
 
 | Chapter | Topic | Key Concepts | Duration |
@@ -24,12 +26,12 @@ This repository contains all the source code for our comprehensive ASP.NET Core 
 | **04** | [HTTP Methods API](./04-http-methods-api/) | PUT, PATCH, DELETE, Status codes | ⏱️ ~20 min |
 | **05** | [DTOs & Validation](./05-dto-and-validations/) | Data Transfer Objects, ModelState | ⏱️ ~22 min |
 | **06** | [AutoMapper Integration](./06-automapper/) | Object mapping, clean architecture | ⏱️ ~23 min |
-| **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~16 min |
-| **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~8 min |
-| **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~22 min |
-| **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~8 min |
-| **11** | [Configuration & Options Pattern](./11-configuration-options/) | IOptions<T>, appsettings.json, Environment-specific configs | ⏱️ ~14 min |
-| **13** | [Azure OAuth Authorization](./13-azure-oauth-authorization/) | OAuth 2.0 Authorization Code Flow with PKCE | ⏱️ ~5 min |
+| **07** | [Dependency Injection](./07-dependency-injection/) | Service lifetimes: Singleton, Scoped, Transient | ⏱️ ~15 min |
+| **08** | [Repository & Service Pattern](./08-repository-and-services/) | Repository pattern, Service layer, Clean architecture | ⏱️ ~7 min |
+| **09** | [Global Exception Handling](./09-exception-handling/) | IExceptionHandler, RFC 7807, Custom exceptions | ⏱️ ~21 min |
+| **10** | [Custom Middleware](./10-custom-middleware/) | IMiddleware interface, Request pipeline, Performance monitoring | ⏱️ ~7 min |
+| **11** | [Configuration & Options Pattern](./11-configuration-options/) | IOptions<T>, appsettings.json, Environment-specific configs | ⏱️ ~13 min |
+| **13** | [Azure OAuth Authorization](./13-azure-oauth-authorization/) | OAuth 2.0 Authorization Code Flow with PKCE | ⏱️ ~16 min |
 
 ## 🎯 What You'll Learn
 
